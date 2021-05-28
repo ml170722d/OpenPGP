@@ -15,7 +15,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 public class RSAUtil {
 
-	public enum SIZE {
+	public static enum SIZE {
 		_1024b, _2048b, _4096b
 	}
 
