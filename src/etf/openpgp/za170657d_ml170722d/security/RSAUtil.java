@@ -15,7 +15,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 public class RSAUtil {
 
-	public static enum SIZE {
+	public static enum KeySize {
 		_1024b, _2048b, _4096b
 	}
 
@@ -31,18 +31,18 @@ public class RSAUtil {
 	 * Returns a generated set of 1024/2048/4096 bit RSA keys using based parameters
 	 * provided.
 	 * 
-	 * @param bitsize enumeration value of RASUtil.SIZE
+	 * @param bitKeySize enumeration value of RASUtil.KeySize
 	 * @return the generated RSA key pair
 	 * @throws GeneralSecurityException if a KeyPairGeneratorSpi implementation for
 	 *                                  the specified algorithm is not available
 	 *                                  from the specified provider
 	 */
-	public static KeyPair generateKeyPair(SIZE bitsize) throws GeneralSecurityException {
+	public static KeyPair generateKeyPair(KeySize bitKeySize) throws GeneralSecurityException {
 		init();
 
 		KeyPairGenerator keyPair = KeyPairGenerator.getInstance("RSA", "BC");
 
-		switch (bitsize) {
+		switch (bitKeySize) {
 		case _1024b:
 			keyPair.initialize(1024);
 			break;
@@ -68,7 +68,7 @@ public class RSAUtil {
 	 *                                  from the specified provider
 	 */
 	public static KeyPair generateKeyPair() throws GeneralSecurityException {
-		return generateKeyPair(SIZE._4096b);
+		return generateKeyPair(KeySize._4096b);
 	}
 
 	/**
@@ -95,18 +95,18 @@ public class RSAUtil {
 	 * Returns a generated set of RSA parameters suitable for creating
 	 * 1024/2048/4096 bit keys.
 	 * 
-	 * @param bitsize enumeration value of RASUtil.SIZE
+	 * @param bitKeySize enumeration value of RASUtil.KeySize
 	 * @return the generated RSA key pair
 	 * @throws GeneralSecurityException if a KeyPairGeneratorSpi implementation for
 	 *                                  the specified algorithm is not available
 	 *                                  from the specified provider
 	 */
-	public static RSAKeyGenParameterSpec generateRSAParams(SIZE bitsize) throws GeneralSecurityException {
+	public static RSAKeyGenParameterSpec generateRSAParams(KeySize bitKeySize) throws GeneralSecurityException {
 		init();
 
 		AlgorithmParameterGenerator paramGen = AlgorithmParameterGenerator.getInstance("RSA", "BC");
 
-		switch (bitsize) {
+		switch (bitKeySize) {
 		case _1024b:
 			paramGen.init(1024);
 			break;
@@ -135,7 +135,7 @@ public class RSAUtil {
 	 *                                  from the specified provider
 	 */
 	public static RSAKeyGenParameterSpec generateRSAParams() throws GeneralSecurityException {
-		return generateRSAParams(SIZE._4096b);
+		return generateRSAParams(KeySize._4096b);
 	}
 
 	/**

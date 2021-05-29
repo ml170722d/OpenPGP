@@ -4,7 +4,9 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 
 import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.openpgp.PGPException;
@@ -12,12 +14,14 @@ import org.bouncycastle.openpgp.PGPPublicKeyRing;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 
+import etf.openpgp.za170657d_ml170722d.security.error.InvalidExportType;
+
 public class KeyRing {
 
 	private PGPSecretKeyRing secretKeyRing = null;
 	private PGPPublicKeyRing publicKeyRing = null;
 
-	public static enum KEYRINGTYPE {
+	public static enum KeyRingType {
 		PUBLIC, SECRET, PUBLIC_SECRET
 	}
 
@@ -164,30 +168,43 @@ public class KeyRing {
 		}
 	}
 
+	public List<byte[]> getEncodedKeyRings() throws IOException {
+		byte[] encodedSecretKeyRing = (secretKeyRing == null) ? new byte[0] : secretKeyRing.getEncoded();
+		byte[] encodedPublicKeyRing = (publicKeyRing == null) ? new byte[0] : publicKeyRing.getEncoded();
+
+		return Arrays.asList(encodedPublicKeyRing, encodedSecretKeyRing);
+	}
+
 	/**
 	 * 
 	 * @return type of key
 	 */
-	public KEYRINGTYPE getKeyRingType() {
+	public KeyRingType getKeyRingType() {
 		if (secretKeyRing == null)
-			return KEYRINGTYPE.PUBLIC;
+			return KeyRingType.PUBLIC;
 		else if (publicKeyRing == null)
-			return KEYRINGTYPE.SECRET;
+			return KeyRingType.SECRET;
 		else
-			return KEYRINGTYPE.PUBLIC_SECRET;
+			return KeyRingType.PUBLIC_SECRET;
 	}
 
 	/**
 	 * Exports secret/public key ring to file provided
 	 * 
 	 * @param fileName          destination file for storing key ring
-	 * @param wantPublicKeyRing true if exporting secret ring, otherwise ture
+	 * @param wantPublicKeyRing true if exporting secret ring, otherwise true
 	 */
-	public void exportKeyRing(File fileName, boolean wantPublicKeyRing) {
-		if (wantPublicKeyRing)
+	public void exportKeyRing(File fileName, KeyRingType type) throws InvalidExportType {
+		switch (type) {
+		case PUBLIC:
 			exportPublicKeyRing(fileName);
-		else
+			break;
+		case SECRET:
 			exportSecretKeyRing(fileName);
+			break;
+		default:
+			throw new InvalidExportType();
+		}
 	}
 
 	private void exportSecretKeyRing(File fileName) {
