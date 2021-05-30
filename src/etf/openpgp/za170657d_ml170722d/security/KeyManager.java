@@ -1,13 +1,14 @@
 package etf.openpgp.za170657d_ml170722d.security;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.util.ArrayList;
@@ -16,6 +17,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPEncryptedData;
@@ -24,10 +26,15 @@ import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPKeyRingGenerator;
 import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKey;
+import org.bouncycastle.openpgp.PGPPublicKeyRing;
+import org.bouncycastle.openpgp.PGPPublicKeyRingCollection;
 import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
+import org.bouncycastle.openpgp.PGPSecretKeyRingCollection;
 import org.bouncycastle.openpgp.PGPSignature;
+import org.bouncycastle.openpgp.PGPUtil;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
+import org.bouncycastle.openpgp.operator.jcajce.JcaKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPDigestCalculatorProviderBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyPair;
@@ -35,10 +42,9 @@ import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyDecryptorBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyEncryptorBuilder;
 
 import etf.openpgp.za170657d_ml170722d.security.KeyRing;
-import etf.openpgp.za170657d_ml170722d.security.error.InvalidExportType;
 import etf.openpgp.za170657d_ml170722d.security.error.InvalidStorage;
 
-public class KeyManage {
+public class KeyManager {
 
 	public static enum KeyType {
 		PUBLIC, PRIVATE
@@ -47,20 +53,17 @@ public class KeyManage {
 	private String storageFile;
 	private List<KeyRing> keyRingList;
 
-	private static KeyManage instance = null;
+	private static KeyManager instance = null;
 
-	private KeyManage(String storageFilePath) {
+	private KeyManager(String storageFilePath) throws IOException {
 		File storage = new File(storageFilePath);
 
-		try {
-			if (!storage.exists())
-				storage.createNewFile();
+		if (!storage.exists())
+			storage.createNewFile();
 
-			this.storageFile = storageFilePath;
-			this.keyRingList = new ArrayList<>();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		this.storageFile = storageFilePath;
+		this.keyRingList = new ArrayList<>();
+
 	}
 
 	/*------------------------------------------------------------------------------------------------*/
@@ -119,37 +122,62 @@ public class KeyManage {
 	}
 
 	/**
-	 * Returns instance of KeyManage class.
+	 * Returns instance of KeyManagerr class.
 	 * 
 	 * @param storage path to storage file
 	 * @return KeyStorace class instance
 	 * @throws InvalidStorage if storage path for instance was not provided
+	 * @throws IOException
 	 */
-	public static KeyManage getInstance(String storagePath) throws InvalidStorage {
+	protected static KeyManager getInstance(String storagePath) throws IOException {
 
-		if (!Files.exists(Paths.get(storagePath)))
-			throw new InvalidStorage();
+		File file = new File(storagePath);
+		if (!file.exists())
+			file.createNewFile();
 
 		if (instance == null)
-			instance = new KeyManage(storagePath);
+			instance = new KeyManager(storagePath);
 		return instance;
 	}
 
 	/**
-	 * Returns instance of KeyManage class. Uses default storage path.
+	 * Returns instance of KeyManager class. Uses default storage path.
 	 * 
 	 * @return KeyStorace class instance
 	 */
-	public static KeyManage getInstance() {
+	public static KeyManager getInstance() {
 		String basePath = new File("").getAbsolutePath();
 
 		try {
-			return getInstance(basePath + "\\keyPair\\OpenPGPApp.data");
-		} catch (InvalidStorage e) {
+			return getInstance(basePath + "\\keyPair\\OpenPGP.ses");
+		} catch (IOException e) {
 			e.printStackTrace();
 		}
 
 		return null;
+	}
+
+	/**
+	 * Return public key from key ring passed
+	 * 
+	 * @param pubKR key ring needed to extract public key
+	 * @return public key for ring
+	 */
+	public static PGPPublicKey getRSAPublicKeyFromKeyRing(PGPPublicKeyRing pubKR) {
+		PGPPublicKey RSAkey = null;
+
+		Iterator<PGPPublicKey> itKey = pubKR.getPublicKeys();
+
+		while (itKey.hasNext()) {
+			PGPPublicKey key = itKey.next();
+
+			if (key.isEncryptionKey()) {
+				RSAkey = key;
+				break;
+			}
+		}
+
+		return RSAkey;
 	}
 
 	/*------------------------------------------------------------------------------------------------*/
@@ -160,18 +188,20 @@ public class KeyManage {
 	/**
 	 * Returns true of operation was successful, otherwise false
 	 * 
-	 * @return boolean
+	 * @return true on success, otherwise false
+	 * @throws PGPException as constructor {@link KeyRing} class
 	 */
 	@SuppressWarnings("unchecked")
-	public boolean loadKeyRings() {
+	public boolean loadKeyRings() throws PGPException {
 		try {
 			File secretFile = new File(storageFile);
 			if (secretFile.exists()) {
+
 				ObjectInputStream in = new ObjectInputStream(new FileInputStream(secretFile));
 				List<byte[]> encodedKeyRingList = (List<byte[]>) in.readObject();
 
 				for (int i = 0; i < encodedKeyRingList.size(); i += 2) {
-					keyRingList.add(new KeyRing(encodedKeyRingList.get(i), encodedKeyRingList.get(i + 1)));
+					keyRingList.add(new KeyRing(encodedKeyRingList.get(i + 1), encodedKeyRingList.get(i)));
 				}
 
 				in.close();
@@ -187,7 +217,7 @@ public class KeyManage {
 	/**
 	 * Returns true of operation was successful, otherwise false
 	 * 
-	 * @return boolean
+	 * @return true on success, otherwise false
 	 */
 	public boolean storeKeyRings() {
 		try {
@@ -215,7 +245,7 @@ public class KeyManage {
 	 * @param index    index of key to export
 	 * @param fileName name of export file
 	 * @param type     type of file to export
-	 * @return boolean
+	 * @return true on success, otherwise false
 	 */
 	public boolean exportKey(int index, File fileName, KeyType type) {
 		try {
@@ -229,7 +259,7 @@ public class KeyManage {
 			default:
 				break;
 			}
-		} catch (InvalidExportType e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 			return false;
 		}
@@ -319,6 +349,63 @@ public class KeyManage {
 		generateKeyPairEncryption(password, email, openpPGPkpSign, openPGPkpEncr);
 	}
 
+	/**
+	 * Imports public key ring from file provided
+	 * 
+	 * @param fileName file used to import
+	 * @throws FileNotFoundException if the file does not exist,is a directory
+	 *                               rather than a regular file,or for some other
+	 *                               reason cannot be opened for reading.
+	 * @throws IOException
+	 * @throws PGPException          if an object is encountered which isn't a
+	 *                               PGPPublicKeyRing
+	 */
+	public void importPublicKeyRingFromFile(String fileName) throws FileNotFoundException, IOException, PGPException {
+		ArmoredInputStream in = new ArmoredInputStream(new BufferedInputStream(new FileInputStream(fileName)));
+		generatePublicKeyRingFromInputStream(in);
+	}
+
+	/**
+	 * Imports secret key ring from file provided
+	 * 
+	 * @param fileName file used to import
+	 * @throws FileNotFoundException if the file does not exist,is a directory
+	 *                               rather than a regular file,or for some other
+	 *                               reason cannot be opened for reading.
+	 * @throws IOException
+	 * @throws PGPException          if an object is encountered which isn't a
+	 *                               PGPSecretKeyRing
+	 */
+	public void importSecretKeyRingFromFile(String fileName) throws FileNotFoundException, IOException, PGPException {
+		ArmoredInputStream in = new ArmoredInputStream(new BufferedInputStream(new FileInputStream(fileName)));
+		generateSecretKeyRingFromInputStream(in);
+	}
+
+	/**
+	 * Tries to import public/secret key ring from file
+	 * 
+	 * @param fileName file used to import
+	 * @return true if successfully imported, otherwise false
+	 */
+	public boolean importKeyRingFromFile(String fileName) {
+		try {
+			ArmoredInputStream in = new ArmoredInputStream(new BufferedInputStream(new FileInputStream(fileName)));
+			generatePublicKeyRingFromInputStream(in);
+
+			return true;
+		} catch (IOException | PGPException e) {
+		}
+
+		try {
+			ArmoredInputStream in = new ArmoredInputStream(new BufferedInputStream(new FileInputStream(fileName)));
+			generateSecretKeyRingFromInputStream(in);
+			return true;
+		} catch (IOException | PGPException e) {
+		}
+
+		return false;
+	}
+
 	/*------------------------------------------------------------------------------------------------*/
 	/*
 	 * private methods
@@ -334,8 +421,7 @@ public class KeyManage {
 
 	private void generateKeyPairSign(char[] password, String email, PGPKeyPair openPGPKeyPair) throws PGPException {
 
-		PGPDigestCalculator calcSHAx = new JcaPGPDigestCalculatorProviderBuilder().build()
-				.get(HashAlgorithmTags.SHA256);
+		PGPDigestCalculator calcSHAx = new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.SHA1);
 
 		PGPKeyRingGenerator keyRingGen = new PGPKeyRingGenerator(PGPSignature.POSITIVE_CERTIFICATION, openPGPKeyPair,
 				email, calcSHAx, null, null,
@@ -349,8 +435,7 @@ public class KeyManage {
 	private void generateKeyPairEncryption(char[] password, String email, PGPKeyPair openPGPKeyPairRSASign,
 			PGPKeyPair openPgpKeyPairRSAEncryption) throws PGPException {
 
-		PGPDigestCalculator calcSHAx = new JcaPGPDigestCalculatorProviderBuilder().build()
-				.get(HashAlgorithmTags.SHA256);
+		PGPDigestCalculator calcSHAx = new JcaPGPDigestCalculatorProviderBuilder().build().get(HashAlgorithmTags.SHA1);
 
 		PGPKeyRingGenerator keyRingGen = new PGPKeyRingGenerator(PGPSignature.POSITIVE_CERTIFICATION,
 				openPGPKeyPairRSASign, email, calcSHAx, null, null,
@@ -364,4 +449,114 @@ public class KeyManage {
 		keyRingList.add(new KeyRing(keyRingGen.generateSecretKeyRing(), keyRingGen.generatePublicKeyRing()));
 	}
 
+	private void generatePublicKeyRingFromInputStream(InputStream in) throws IOException, PGPException {
+		in = PGPUtil.getDecoderStream(in);
+
+		PGPPublicKeyRingCollection pgpPub = new PGPPublicKeyRingCollection(in, new JcaKeyFingerprintCalculator());
+		Iterator<PGPPublicKeyRing> it = pgpPub.getKeyRings();
+
+		while (it.hasNext()) {
+			PGPPublicKeyRing pubKR = it.next();
+			keyRingList.add(new KeyRing(pubKR));
+		}
+
+	}
+
+	private void generateSecretKeyRingFromInputStream(InputStream in) throws IOException, PGPException {
+		in = PGPUtil.getDecoderStream(in);
+
+		PGPSecretKeyRingCollection pgpSec = new PGPSecretKeyRingCollection(in, new JcaKeyFingerprintCalculator());
+		Iterator<PGPSecretKeyRing> it = pgpSec.getKeyRings();
+
+		while (it.hasNext()) {
+			PGPSecretKeyRing secKR = it.next();
+			keyRingList.add(new KeyRing(secKR));
+		}
+	}
+
+	/*------------------------------------------------------------------------------------------------*/
+	/*
+	 * test methods
+	 */
+	public static void testGenerateExportAndImportKeys() {
+		try {
+			java.security.Security.addProvider(new BouncyCastleProvider());
+			java.security.Security.setProperty("crypto.policy", "unlimited");
+
+			{
+				/*
+				 * data needed
+				 */
+				char[] password = "password".toCharArray();
+				String email = "lukamatke@gmail.com";
+
+				String pubName = new File("").getAbsoluteFile() + "\\keyPair\\test\\pub.asc";
+				String privName = new File("").getAbsoluteFile() + "\\keyPair\\test\\priv.asc";
+
+				/*
+				 * generate key ring
+				 */
+				KeyManager km = KeyManager.getInstance();
+				km.generateRSAKeyPairSign(password, email, RSAUtil.KeySize._1024b);
+
+				/*
+				 * export keys separately (adding 2 new keys to list)
+				 */
+				km.exportKey(0, new File(pubName), KeyType.PUBLIC);
+				km.exportKey(0, new File(privName), KeyType.PRIVATE);
+
+				/*
+				 * import keys separately
+				 */
+				km.importPublicKeyRingFromFile(pubName);
+				km.importSecretKeyRingFromFile(privName);
+
+				System.out.println(km.keyRingList.size());
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	public static void testGenerateStoreAndLoadKeys() {
+		try {
+			/*
+			 * data needed
+			 */
+			char[] password = "password".toCharArray();
+			String email1 = "lukamatke@gmail.com";
+			String email2 = "zile@gmail.com";
+
+			/*
+			 * generate key ring
+			 */
+			KeyManager km = KeyManager.getInstance();
+			km.generateRSAKeyPairSign(password, email1, RSAUtil.KeySize._1024b);
+			km.generateRSAKeyPairSign(password, email2, RSAUtil.KeySize._1024b);
+
+			/*
+			 * store app data to .ses file
+			 */
+			km.storeKeyRings();
+
+			/*
+			 * delete keys in app
+			 */
+			km.deleteKey(0, password);
+			System.out.println(km.keyRingList.size());
+			km.deleteKey(0, password);
+			System.out.println(km.keyRingList.size());
+
+			/*
+			 * load app data from .ses file
+			 */
+			km.loadKeyRings();
+
+			System.out.println(km.keyRingList.size());
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
 }
