@@ -59,21 +59,16 @@ public class KeyRing {
 	 * 
 	 * @param secretKeyRingEncoded byte array of encoded secrete key ring
 	 * @param publicKeyRingEncoded byte array of encoded public key ring
+	 * @throws PGPException as {@link PGPSecretKeyRing}/{@link PGPPublicKeyRing}
+	 *                      class
+	 * @throws IOException  as {@link PGPSecretKeyRing}/{@link PGPPublicKeyRing}
+	 *                      class
 	 */
-	public KeyRing(byte[] secretKeyRingEncoded, byte[] publicKeyRingEncoded) {
-		try {
-			if (secretKeyRingEncoded.length > 0)
-				secretKeyRing = new PGPSecretKeyRing(secretKeyRingEncoded, new JcaKeyFingerprintCalculator());
-		} catch (IOException | PGPException e) {
-			e.printStackTrace();
-		}
-
-		try {
-			if (publicKeyRingEncoded.length > 0)
-				publicKeyRing = new PGPPublicKeyRing(publicKeyRingEncoded, new JcaKeyFingerprintCalculator());
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+	public KeyRing(byte[] secretKeyRingEncoded, byte[] publicKeyRingEncoded) throws IOException, PGPException {
+		if (secretKeyRingEncoded.length > 0)
+			secretKeyRing = new PGPSecretKeyRing(secretKeyRingEncoded, new JcaKeyFingerprintCalculator());
+		if (publicKeyRingEncoded.length > 0)
+			publicKeyRing = new PGPPublicKeyRing(publicKeyRingEncoded, new JcaKeyFingerprintCalculator());
 	}
 
 	/**
@@ -193,8 +188,9 @@ public class KeyRing {
 	 * 
 	 * @param fileName          destination file for storing key ring
 	 * @param wantPublicKeyRing true if exporting secret ring, otherwise true
+	 * @throws IOException
 	 */
-	public void exportKeyRing(File fileName, KeyRingType type) throws InvalidExportType {
+	public void exportKeyRing(File fileName, KeyRingType type) throws InvalidExportType, IOException {
 		switch (type) {
 		case PUBLIC:
 			exportPublicKeyRing(fileName);
@@ -207,29 +203,21 @@ public class KeyRing {
 		}
 	}
 
-	private void exportSecretKeyRing(File fileName) {
+	private void exportSecretKeyRing(File fileName) throws IOException {
 		assert (secretKeyRing != null);
 
-		try {
-			ArmoredOutputStream privateOut = new ArmoredOutputStream(
-					new BufferedOutputStream(new FileOutputStream(fileName)));
-			secretKeyRing.encode(privateOut);
-			privateOut.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		ArmoredOutputStream privateOut = new ArmoredOutputStream(
+				new BufferedOutputStream(new FileOutputStream(fileName)));
+		secretKeyRing.encode(privateOut);
+		privateOut.close();
 	}
 
-	private void exportPublicKeyRing(File fileName) {
+	private void exportPublicKeyRing(File fileName) throws IOException {
 		assert (publicKeyRing != null);
 
-		try {
-			ArmoredOutputStream privateOut = new ArmoredOutputStream(
-					new BufferedOutputStream(new FileOutputStream(fileName)));
-			publicKeyRing.encode(privateOut);
-			privateOut.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		ArmoredOutputStream privateOut = new ArmoredOutputStream(
+				new BufferedOutputStream(new FileOutputStream(fileName)));
+		publicKeyRing.encode(privateOut);
+		privateOut.close();
 	}
 }
