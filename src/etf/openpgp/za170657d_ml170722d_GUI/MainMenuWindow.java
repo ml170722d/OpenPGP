@@ -12,10 +12,30 @@ import javax.swing.JMenuItem;
 import java.awt.Font;
 import java.awt.Color;
 import java.awt.Toolkit;
+import javax.swing.JDialog;
+import javax.swing.JFileChooser;
+import javax.swing.JTextArea;
+import javax.swing.filechooser.FileSystemView;
+import javax.swing.JLabel;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.io.File;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
 
 public class MainMenuWindow {
 
 	private JFrame frmOpenPgp;
+	
+	private File importedKeyFile;
+
+
+	public File getImportedKeyFile() {
+		return importedKeyFile;
+	}
+
 
 	/**
 	 * Launch the application.
@@ -57,28 +77,104 @@ public class MainMenuWindow {
 		frmOpenPgp.setJMenuBar(menuBar);
 		
 		JMenu mnManageKeyPairs = new JMenu("Manage Key Pairs");
-		mnManageKeyPairs.setFont(new Font("Segoe UI", Font.BOLD, 25));
+		mnManageKeyPairs.setFont(new Font("Segoe UI", Font.BOLD, 20));
 		menuBar.add(mnManageKeyPairs);
 		
 		JMenuItem mntmAddNewKey = new JMenuItem("Add new Key Pair");
+		//This action listener if onClick listener for Add new Key Pair menu item
+		//This listener invokes dialog for new Key Pair making.
+		mntmAddNewKey.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				System.out.println("Clicked");
+				new NewKeyPairDialog().setVisible(true);
+				//Your code goes here ####
+			}
+		});
+		
 		mntmAddNewKey.setFont(new Font("Segoe UI", Font.BOLD, 18));
 		mnManageKeyPairs.add(mntmAddNewKey);
 		
 		JMenuItem mntmDeleteKeyPair = new JMenuItem("Delete Key Pair");
+		//This action listener if onClick listener for Delete Key Pair menu item
+		//This listener invokes dialog for deleting existing Key Pair
+		mntmDeleteKeyPair.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				//well not yet
+				//Your code goes here ####
+			}
+		});
 		mntmDeleteKeyPair.setFont(new Font("Segoe UI", Font.BOLD, 18));
 		mnManageKeyPairs.add(mntmDeleteKeyPair);
 		
-		JMenu mnNewMenu = new JMenu("Import/Export Key Pairs");
-		mnNewMenu.setFont(new Font("Segoe UI", Font.BOLD, 25));
-		menuBar.add(mnNewMenu);
+		JMenu ExportImportMenu = new JMenu("Import/Export Key Pairs");
+		ExportImportMenu.setFont(new Font("Segoe UI", Font.BOLD, 20));
+		menuBar.add(ExportImportMenu);
 		
 		JMenuItem mntmNewMenuItem = new JMenuItem("Import Key Pair");
+		//System file dialog for file choosing(Import).
+		mntmNewMenuItem.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				final JFileChooser fileChooser = new JFileChooser(FileSystemView.getFileSystemView().getHomeDirectory());
+				int result = fileChooser.showOpenDialog(frmOpenPgp);
+				if(result == JFileChooser.APPROVE_OPTION) {
+					importedKeyFile = fileChooser.getSelectedFile();
+					//opened file!
+				}
+				
+			}
+		});
 		mntmNewMenuItem.setFont(new Font("Segoe UI", Font.BOLD, 18));
-		mnNewMenu.add(mntmNewMenuItem);
+		ExportImportMenu.add(mntmNewMenuItem);
 		
 		JMenuItem mntmNewMenuItem_1 = new JMenuItem("Export Key Pair");
+		//System file dialog for file saving(Export).
+		mntmNewMenuItem_1.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				final JFileChooser fileChooser = new JFileChooser(FileSystemView.getFileSystemView().getHomeDirectory());
+				int result = fileChooser.showSaveDialog(frmOpenPgp);
+				if(result == JFileChooser.APPROVE_OPTION) {
+					//Code for file saving?
+				}
+			}
+		});
 		mntmNewMenuItem_1.setFont(new Font("Segoe UI", Font.BOLD, 18));
-		mnNewMenu.add(mntmNewMenuItem_1);
+		ExportImportMenu.add(mntmNewMenuItem_1);
+		
+		JMenu mnNewMenu = new JMenu("Decrypt/Encrypt file");
+		mnNewMenu.setFont(new Font("Segoe UI", Font.BOLD, 20));
+		menuBar.add(mnNewMenu);
+		
+		JMenuItem mntmNewMenuItem_2 = new JMenuItem("Encrypt file");
+		mntmNewMenuItem_2.setFont(new Font("Segoe UI", Font.BOLD, 18));
+		mnNewMenu.add(mntmNewMenuItem_2);
+		
+		JMenuItem mntmNewMenuItem_3 = new JMenuItem("Decrypt file");
+		mntmNewMenuItem_3.setFont(new Font("Segoe UI", Font.BOLD, 18));
+		mnNewMenu.add(mntmNewMenuItem_3);
+		frmOpenPgp.getContentPane().setLayout(null);
+		
+		JPanel panel = new JPanel();
+		panel.setBounds(59, 80, 969, 320);
+		frmOpenPgp.getContentPane().add(panel);
+		
+		JLabel lblNewLabel = new JLabel("Name");
+		lblNewLabel.setFont(new Font("Tahoma", Font.BOLD, 15));
+		lblNewLabel.setBounds(144, 51, 56, 16);
+		frmOpenPgp.getContentPane().add(lblNewLabel);
+		
+		JLabel lblNewLabel_1 = new JLabel("E-Mail");
+		lblNewLabel_1.setFont(new Font("Tahoma", Font.BOLD, 15));
+		lblNewLabel_1.setBounds(370, 51, 56, 16);
+		frmOpenPgp.getContentPane().add(lblNewLabel_1);
+		
+		JLabel lblNewLabel_2 = new JLabel("User-ID");
+		lblNewLabel_2.setFont(new Font("Tahoma", Font.BOLD, 15));
+		lblNewLabel_2.setBounds(635, 51, 84, 16);
+		frmOpenPgp.getContentPane().add(lblNewLabel_2);
+		
+		JLabel lblNewLabel_3 = new JLabel("Key-ID");
+		lblNewLabel_3.setFont(new Font("Tahoma", Font.BOLD, 15));
+		lblNewLabel_3.setBounds(920, 51, 56, 16);
+		frmOpenPgp.getContentPane().add(lblNewLabel_3);
 	}
-
 }
