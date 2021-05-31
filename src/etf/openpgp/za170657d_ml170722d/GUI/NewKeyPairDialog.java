@@ -1,4 +1,4 @@
-package etf.openpgp.za170657d_ml170722d_GUI;
+package etf.openpgp.za170657d_ml170722d.GUI;
 
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;

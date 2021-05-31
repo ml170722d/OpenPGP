@@ -1,4 +1,4 @@
-package etf.openpgp.za170657d_ml170722d_GUI;
+package etf.openpgp.za170657d_ml170722d.GUI;
 
 import java.awt.EventQueue;
 
@@ -157,24 +157,19 @@ public class MainMenuWindow {
 		panel.setBounds(59, 80, 969, 320);
 		frmOpenPgp.getContentPane().add(panel);
 		
-		JLabel lblNewLabel = new JLabel("Name");
+		JLabel lblNewLabel = new JLabel("E-Mail");
 		lblNewLabel.setFont(new Font("Tahoma", Font.BOLD, 15));
 		lblNewLabel.setBounds(144, 51, 56, 16);
 		frmOpenPgp.getContentPane().add(lblNewLabel);
 		
-		JLabel lblNewLabel_1 = new JLabel("E-Mail");
+		JLabel lblNewLabel_1 = new JLabel("Key ID");
 		lblNewLabel_1.setFont(new Font("Tahoma", Font.BOLD, 15));
-		lblNewLabel_1.setBounds(370, 51, 56, 16);
+		lblNewLabel_1.setBounds(494, 51, 56, 16);
 		frmOpenPgp.getContentPane().add(lblNewLabel_1);
 		
-		JLabel lblNewLabel_2 = new JLabel("User-ID");
+		JLabel lblNewLabel_2 = new JLabel("Valid From");
 		lblNewLabel_2.setFont(new Font("Tahoma", Font.BOLD, 15));
-		lblNewLabel_2.setBounds(635, 51, 84, 16);
+		lblNewLabel_2.setBounds(844, 51, 84, 16);
 		frmOpenPgp.getContentPane().add(lblNewLabel_2);
-		
-		JLabel lblNewLabel_3 = new JLabel("Key-ID");
-		lblNewLabel_3.setFont(new Font("Tahoma", Font.BOLD, 15));
-		lblNewLabel_3.setBounds(920, 51, 56, 16);
-		frmOpenPgp.getContentPane().add(lblNewLabel_3);
 	}
 }
