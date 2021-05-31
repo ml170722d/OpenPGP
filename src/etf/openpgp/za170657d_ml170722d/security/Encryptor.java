@@ -2,39 +2,54 @@ package etf.openpgp.za170657d_ml170722d.security;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 
 import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.openpgp.PGPCompressedData;
 import org.bouncycastle.openpgp.PGPCompressedDataGenerator;
+import org.bouncycastle.openpgp.PGPEncryptedData;
 import org.bouncycastle.openpgp.PGPEncryptedDataGenerator;
+import org.bouncycastle.openpgp.PGPEncryptedDataList;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPLiteralData;
 import org.bouncycastle.openpgp.PGPLiteralDataGenerator;
+import org.bouncycastle.openpgp.PGPObjectFactory;
 import org.bouncycastle.openpgp.PGPPublicKey;
+import org.bouncycastle.openpgp.PGPPublicKeyEncryptedData;
 import org.bouncycastle.openpgp.PGPPublicKeyRing;
+import org.bouncycastle.openpgp.PGPSecretKey;
+import org.bouncycastle.openpgp.PGPSecretKeyRing;
+import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
 import org.bouncycastle.openpgp.operator.jcajce.JcePGPDataEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePublicKeyKeyEncryptionMethodGenerator;
+import org.bouncycastle.util.io.Streams;
 
 public class Encryptor {
 
 	private static String provider = "BC";
 
-	public static enum Type {
+	public static enum EncryptionType {
 		REGULAR, ARMORED
+	}
+	
+	public static enum EncryptionAlg {
+		AES, CAST5
 	}
 
 	/*
@@ -132,7 +147,7 @@ public class Encryptor {
 	 * public methods
 	 */
 
-	public static void enctyptDataCAST5(String filename, List<PGPPublicKey> encryptionKeys, byte[] data, Type type)
+	public static void enctyptDataCAST5(String filename, List<PGPPublicKey> encryptionKeys, byte[] data, EncryptionType type)
 			throws IOException {
 		OutputStream out;
 		switch (type) {
@@ -151,7 +166,7 @@ public class Encryptor {
 	}
 
 	public static void enctyptData3DES(byte[] message, String filename, List<PGPPublicKey> encryptionKeys, byte[] data,
-			Type type) throws IOException, PGPException {
+			EncryptionType type) throws IOException, PGPException {
 		byte[] encryptedData = encrypt3DES(message, encryptionKeys);
 
 		OutputStream out;
@@ -224,5 +239,66 @@ public class Encryptor {
 		comData.close();
 
 		return bOut.toByteArray();
+	}
+
+	public static byte[] unzipBytes(byte[] data) throws IOException, PGPException {
+		ByteArrayInputStream in = new ByteArrayInputStream(data);
+
+		PGPObjectFactory pgpFact = new JcaPGPObjectFactory(in);
+		PGPCompressedData object = (PGPCompressedData) pgpFact.nextObject();
+		InputStream original = object.getDataStream();
+
+		byte[] literalData = Streams.readAll(original);
+
+		original.close();
+
+		PGPObjectFactory litFact = new JcaPGPObjectFactory(literalData);
+		PGPLiteralData litData = (PGPLiteralData) litFact.nextObject();
+		byte[] finalData = Streams.readAll(litData.getInputStream());
+
+		return finalData;
+	}
+
+	public static EncryptedDataWithSecretKey getSecretKeyForEncryptedData(List<PGPSecretKeyRing> secretKeyRings,
+			byte[] pgpEncryptedData) {
+		PGPPublicKeyEncryptedData encData = null;
+		PGPSecretKey matchingSecretKey = null;
+
+		try {
+			PGPObjectFactory pgpFact = new JcaPGPObjectFactory(pgpEncryptedData);
+			PGPEncryptedDataList encList = (PGPEncryptedDataList) pgpFact.nextObject();
+
+			for (PGPEncryptedData pgpEnc : encList) {
+				PGPPublicKeyEncryptedData pkEnc = (PGPPublicKeyEncryptedData) pgpEnc;
+
+				Optional<PGPSecretKey> curMatchingSecretKey = secretKeyRings.stream()
+						.map(secretKeyRing -> secretKeyRing.getSecretKey(pkEnc.getKeyID()))
+						.filter(secretKey -> secretKey != null).findFirst();
+
+				if (curMatchingSecretKey.isPresent()) {
+					encData = pkEnc;
+					matchingSecretKey = curMatchingSecretKey.get();
+					break;
+				}
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+			return null;
+		}
+
+		return new EncryptedDataWithSecretKey(encData, matchingSecretKey);
+	}
+
+	/*
+	 * public class
+	 */
+	public static class EncryptedDataWithSecretKey {
+		public PGPPublicKeyEncryptedData pbEncryptedData;
+		public PGPSecretKey secretKey;
+
+		public EncryptedDataWithSecretKey(PGPPublicKeyEncryptedData pbEncryptedData, PGPSecretKey secretKey) {
+			this.pbEncryptedData = pbEncryptedData;
+			this.secretKey = secretKey;
+		}
 	}
 }
