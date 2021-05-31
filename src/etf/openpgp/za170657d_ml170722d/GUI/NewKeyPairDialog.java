@@ -140,7 +140,7 @@ public class NewKeyPairDialog extends JDialog {
 							
 						}
 						else {
-							new PassPhraseDialog().setVisible(true);
+							new PassPhraseDialog(user_email,selectedKeySize).setVisible(true);
 							dispose();
 						}
 					}

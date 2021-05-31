@@ -24,6 +24,8 @@ public class PassPhraseDialog extends JDialog {
 	private JTextField RepeatTextField;
 	
 	private String passphrase_password;
+	private String email;
+	private int keySize;
 	
 	
 	public String getPassphrase_password() {
@@ -33,20 +35,15 @@ public class PassPhraseDialog extends JDialog {
 	/**
 	 * Launch the application.
 	 */
-	public static void main(String[] args) {
-		try {
-			PassPhraseDialog dialog = new PassPhraseDialog();
-			dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-			dialog.setVisible(true);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
+	
 	/**
 	 * Create the dialog.
 	 */
-	public PassPhraseDialog() {
+	public PassPhraseDialog(String email,int keySize) {
+		
+		this.email = email;
+		this.keySize = keySize;
+		
 		setIconImage(Toolkit.getDefaultToolkit().getImage(PassPhraseDialog.class.getResource("/javax/swing/plaf/metal/icons/ocean/collapsed.gif")));
 		setFont(new Font("Dialog", Font.BOLD, 15));
 		setTitle("Passphrase Generator");
@@ -115,6 +112,7 @@ public class PassPhraseDialog extends JDialog {
 						}
 						
 						passphrase_password = temp_password;
+						//From this part of code you have passphrase password,email and keysize!!!
 						dispose();
 					}
 				});
