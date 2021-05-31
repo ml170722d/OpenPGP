@@ -41,6 +41,7 @@ import org.bouncycastle.openpgp.operator.jcajce.JcaPGPKeyPair;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyDecryptorBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyEncryptorBuilder;
 
+import etf.openpgp.za170657d_ml170722d.GUI.UserInfo;
 import etf.openpgp.za170657d_ml170722d.security.KeyRing;
 import etf.openpgp.za170657d_ml170722d.security.error.InvalidStorage;
 
@@ -406,6 +407,23 @@ public class KeyManager {
 		return false;
 	}
 
+	public List<UserInfo> getUIUserInfo() {
+		List<UserInfo> uiList = new ArrayList<>();
+
+		int i = 0;
+		for (KeyRing kr : keyRingList) {
+			long keyId;
+			try {
+				keyId = kr.getPublicKeyRing().getPublicKey().getKeyID();
+			} catch (Exception e) {
+				keyId = kr.getSecretKeyRing().getPublicKey().getKeyID();
+			}
+			uiList.add(new UserInfo(i++, kr.getEmail(), kr.getValidFrom(), keyId));
+		}
+
+		return uiList;
+	}
+
 	/*------------------------------------------------------------------------------------------------*/
 	/*
 	 * private methods
@@ -488,7 +506,9 @@ public class KeyManager {
 				 * data needed
 				 */
 				char[] password = "password".toCharArray();
-				String email = "lukamatke@gmail.com";
+				String email = "a@gmail.com";
+				String email1 = "b@gmail.com";
+				String email2 = "c@gmail.com";
 
 				String pubName = new File("").getAbsoluteFile() + "\\keyPair\\test\\pub.asc";
 				String privName = new File("").getAbsoluteFile() + "\\keyPair\\test\\priv.asc";
@@ -498,6 +518,8 @@ public class KeyManager {
 				 */
 				KeyManager km = KeyManager.getInstance();
 				km.generateRSAKeyPairSign(password, email, RSAUtil.KeySize._1024b);
+				km.generateRSAKeyPairSign(password, email1, RSAUtil.KeySize._1024b);
+				km.generateRSAKeyPairSign(password, email2, RSAUtil.KeySize._1024b);
 
 				/*
 				 * export keys separately (adding 2 new keys to list)
@@ -512,6 +534,12 @@ public class KeyManager {
 				km.importSecretKeyRingFromFile(privName);
 
 				System.out.println(km.keyRingList.size());
+
+				/*
+				 * print use data
+				 */
+				List<UserInfo> list = km.getUIUserInfo();
+				System.out.println(list);
 			}
 
 		} catch (Exception e) {
@@ -525,8 +553,8 @@ public class KeyManager {
 			 * data needed
 			 */
 			char[] password = "password".toCharArray();
-			String email1 = "lukamatke@gmail.com";
-			String email2 = "zile@gmail.com";
+			String email1 = "a@gmail.com";
+			String email2 = "b@gmail.com";
 
 			/*
 			 * generate key ring
@@ -534,6 +562,12 @@ public class KeyManager {
 			KeyManager km = KeyManager.getInstance();
 			km.generateRSAKeyPairSign(password, email1, RSAUtil.KeySize._1024b);
 			km.generateRSAKeyPairSign(password, email2, RSAUtil.KeySize._1024b);
+
+			km.generateRSAKeyPairSign(password, email1, RSAUtil.KeySize._2048b);
+			km.generateRSAKeyPairSign(password, email2, RSAUtil.KeySize._2048b);
+
+			km.generateRSAKeyPairSign(password, email1, RSAUtil.KeySize._4096b);
+			km.generateRSAKeyPairSign(password, email2, RSAUtil.KeySize._4096b);
 
 			/*
 			 * store app data to .ses file
@@ -543,10 +577,9 @@ public class KeyManager {
 			/*
 			 * delete keys in app
 			 */
-			km.deleteKey(0, password);
-			System.out.println(km.keyRingList.size());
-			km.deleteKey(0, password);
-			System.out.println(km.keyRingList.size());
+			while (km.keyRingList.size() > 0) {
+				km.deleteKey(0, password);
+			}
 
 			/*
 			 * load app data from .ses file
@@ -555,8 +588,15 @@ public class KeyManager {
 
 			System.out.println(km.keyRingList.size());
 
+			/*
+			 * print use data
+			 */
+			List<UserInfo> list = km.getUIUserInfo();
+			System.out.println(list);
+
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
+
 }
