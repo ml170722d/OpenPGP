@@ -9,11 +9,18 @@ import javax.swing.JDialog;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.border.EmptyBorder;
+
+import org.bouncycastle.openpgp.PGPException;
+
+import etf.openpgp.za170657d_ml170722d.security.KeyManager;
+import etf.openpgp.za170657d_ml170722d.security.RSAUtil;
+
 import java.awt.Font;
 import java.awt.Toolkit;
 import javax.swing.JLabel;
 import javax.swing.JTextField;
 import java.awt.event.ActionListener;
+import java.security.GeneralSecurityException;
 import java.awt.event.ActionEvent;
 import javax.swing.SwingConstants;
 
@@ -22,12 +29,11 @@ public class PassPhraseDialog extends JDialog {
 	private final JPanel contentPanel = new JPanel();
 	private JTextField PasswordTextField;
 	private JTextField RepeatTextField;
-	
+
 	private String passphrase_password;
 	private String email;
 	private int keySize;
-	
-	
+
 	public String getPassphrase_password() {
 		return passphrase_password;
 	}
@@ -35,16 +41,17 @@ public class PassPhraseDialog extends JDialog {
 	/**
 	 * Launch the application.
 	 */
-	
+
 	/**
 	 * Create the dialog.
 	 */
-	public PassPhraseDialog(String email,int keySize) {
-		
+	public PassPhraseDialog(String email, int keySize) {
+
 		this.email = email;
 		this.keySize = keySize;
-		
-		setIconImage(Toolkit.getDefaultToolkit().getImage(PassPhraseDialog.class.getResource("/javax/swing/plaf/metal/icons/ocean/collapsed.gif")));
+
+		setIconImage(Toolkit.getDefaultToolkit()
+				.getImage(PassPhraseDialog.class.getResource("/javax/swing/plaf/metal/icons/ocean/collapsed.gif")));
 		setFont(new Font("Dialog", Font.BOLD, 15));
 		setTitle("Passphrase Generator");
 		setResizable(false);
@@ -83,7 +90,7 @@ public class PassPhraseDialog extends JDialog {
 			contentPanel.add(RepeatTextField);
 			RepeatTextField.setColumns(10);
 		}
-		
+
 		JLabel lblErrorMsg = new JLabel("");
 		lblErrorMsg.setHorizontalAlignment(SwingConstants.CENTER);
 		lblErrorMsg.setFont(new Font("Tahoma", Font.PLAIN, 15));
@@ -99,20 +106,51 @@ public class PassPhraseDialog extends JDialog {
 					public void actionPerformed(ActionEvent e) {
 						String temp_password = PasswordTextField.getText();
 						String temp_repeat = RepeatTextField.getText();
-						
-						if(temp_password.equals("") || temp_repeat.equals("")) {
+
+						if (temp_password.equals("") || temp_repeat.equals("")) {
 							lblErrorMsg.setText("Please enter valid data!");
 							lblErrorMsg.setForeground(Color.RED);
 							return;
 						}
-						if(!temp_password.equals(temp_repeat)) {
+						if (!temp_password.equals(temp_repeat)) {
 							lblErrorMsg.setText("Passwords do not match!");
 							lblErrorMsg.setForeground(Color.RED);
 							return;
 						}
-						
+
 						passphrase_password = temp_password;
-						//From this part of code you have passphrase password,email and keysize!!!
+						// From this part of code you have passphrase password,email and keysize!!!
+
+						try {
+							KeyManager km = KeyManager.getInstance();
+							switch (keySize) {
+							case 1024:
+								km.generateRSAKeyPairSign(passphrase_password.toCharArray(), email,
+										RSAUtil.KeySize._1024b);
+								break;
+							case 2048:
+								km.generateRSAKeyPairSign(passphrase_password.toCharArray(), email,
+										RSAUtil.KeySize._2048b);
+								break;
+							case 4096:
+								km.generateRSAKeyPairSign(passphrase_password.toCharArray(), email,
+										RSAUtil.KeySize._4096b);
+								break;
+
+							default:
+								break;
+							}
+							
+							System.out.println(km.getUIUserInfo());
+							
+						} catch (PGPException err) {
+							err.printStackTrace();
+						} catch (GeneralSecurityException err) {
+							err.printStackTrace();
+						} catch (Exception err) {
+							err.printStackTrace();
+						}
+
 						dispose();
 					}
 				});
