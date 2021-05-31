@@ -24,17 +24,29 @@ import etf.openpgp.za170657d_ml170722d.security.KeyManager;
 import javax.swing.JLabel;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import javax.swing.JScrollPane;
+import java.awt.GridLayout;
+import javax.swing.JTable;
+import javax.swing.border.LineBorder;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.ListSelectionModel;
 
 public class MainMenuWindow {
 
 	private JFrame frmOpenPgp;
 
 	private File importedKeyFile;
+	private JTable table;
 
 	public File getImportedKeyFile() {
 		return importedKeyFile;
@@ -60,24 +72,41 @@ public class MainMenuWindow {
 	 * Create the application.
 	 */
 	public MainMenuWindow() {
-		initialize();
+		initialize(this);
 		try {
 			KeyManager.getInstance().loadKeyRings();
 		} catch (PGPException e) {
 			e.printStackTrace();
 		}
 
-//		stores all keys that are used by app
-//		KeyManager.getInstance().storeKeyRings();
 
 //		remove key ring from key manager
 //		KeyManager.getInstance().deleteKey(ind, password);
+		
+	
+		
+	}
+	
+
+	public void addKeyPair() {
+		System.out.println("Add new key pair");
+		ArrayList<UserInfo> list = (ArrayList<UserInfo>) KeyManager.getInstance().getUIUserInfo();
+
+		Iterator it = list.iterator();
+		
+		while(it.hasNext()) {
+		 UserInfo item = (UserInfo) it.next();
+		 
+		 
+		 
+		}
+		
 	}
 
 	/**
 	 * Initialize the contents of the frame.
 	 */
-	private void initialize() {
+	private void initialize(MainMenuWindow host) {
 		frmOpenPgp = new JFrame();
 		frmOpenPgp.setResizable(false);
 		frmOpenPgp.setIconImage(Toolkit.getDefaultToolkit()
@@ -101,10 +130,23 @@ public class MainMenuWindow {
 		mntmAddNewKey.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				System.out.println("Clicked");
-				new NewKeyPairDialog().setVisible(true);
+				new NewKeyPairDialog(host).setVisible(true);
 				// Your code goes here ####
 			}
 		});
+		
+		//listener for window closing
+		frmOpenPgp.addWindowListener(new WindowAdapter()
+	     {
+	       
+			@Override
+	         public void windowClosing(WindowEvent e)
+	         {
+	             System.out.println("Closed");
+	             KeyManager.getInstance().storeKeyRings();
+	             e.getWindow().dispose();
+	         }
+	     });
 
 		mntmAddNewKey.setFont(new Font("Segoe UI", Font.BOLD, 18));
 		mnManageKeyPairs.add(mntmAddNewKey);
@@ -154,6 +196,9 @@ public class MainMenuWindow {
 				}
 			}
 		});
+		
+		
+		
 		mntmNewMenuItem_1.setFont(new Font("Segoe UI", Font.BOLD, 18));
 		ExportImportMenu.add(mntmNewMenuItem_1);
 
@@ -169,24 +214,30 @@ public class MainMenuWindow {
 		mntmNewMenuItem_3.setFont(new Font("Segoe UI", Font.BOLD, 18));
 		mnNewMenu.add(mntmNewMenuItem_3);
 		frmOpenPgp.getContentPane().setLayout(null);
+		
+		JScrollPane scrollPane = new JScrollPane();
+		scrollPane.setBounds(120, 52, 872, 340);
+		frmOpenPgp.getContentPane().add(scrollPane);
+		
+		
+		String columnNames[] = {"E-Mail","Key-ID","Valid From"};
+		
+		String data[][] = {
+				{"Temp","Temp","Temp"}
+		};
+		
+		table = new JTable(data,columnNames);
+		table.setFont(new Font("Arial Black", Font.PLAIN, 15));
+		table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		scrollPane.setViewportView(table);
+		table.setBorder(null);
+		table.setBounds(0, 0, 1, 1);
+		
+		
 
-		JPanel panel = new JPanel();
-		panel.setBounds(59, 80, 969, 320);
-		frmOpenPgp.getContentPane().add(panel);
+		
+		
 
-		JLabel lblNewLabel = new JLabel("E-Mail");
-		lblNewLabel.setFont(new Font("Tahoma", Font.BOLD, 15));
-		lblNewLabel.setBounds(144, 51, 56, 16);
-		frmOpenPgp.getContentPane().add(lblNewLabel);
-
-		JLabel lblNewLabel_1 = new JLabel("Key ID");
-		lblNewLabel_1.setFont(new Font("Tahoma", Font.BOLD, 15));
-		lblNewLabel_1.setBounds(494, 51, 56, 16);
-		frmOpenPgp.getContentPane().add(lblNewLabel_1);
-
-		JLabel lblNewLabel_2 = new JLabel("Valid From");
-		lblNewLabel_2.setFont(new Font("Tahoma", Font.BOLD, 15));
-		lblNewLabel_2.setBounds(844, 51, 84, 16);
-		frmOpenPgp.getContentPane().add(lblNewLabel_2);
+	
 	}
 }
