@@ -26,6 +26,8 @@ import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -35,6 +37,8 @@ import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import javax.swing.JScrollPane;
 import java.awt.GridLayout;
+import java.awt.RenderingHints.Key;
+
 import javax.swing.JTable;
 import javax.swing.border.LineBorder;
 import javax.swing.event.ListSelectionEvent;
@@ -134,6 +138,21 @@ public class MainMenuWindow {
 		 model.insertRow(model.getRowCount(), rowData);
 		
 	}
+	
+	private void UpdateTableAfterImport() {
+		
+		DefaultTableModel model = (DefaultTableModel) keyPairTable.getModel();
+		String rowData[] = new String[3];
+		
+		UserInfo userInfo = userInfoList.get(userInfoList.size()-1);
+		rowData[0] = userInfo.getEmail();
+		rowData[1] = Long.toString(userInfo.getKeyId());
+		rowData[2] = userInfo.getValidDateFrom().toString();
+		 
+		model.insertRow(model.getRowCount(), rowData);
+		
+	}
+	
 	private void RemoveTableRow() {
 		
 		Iterator it = this.userInfoList.iterator();
@@ -227,40 +246,65 @@ public class MainMenuWindow {
 		ExportImportMenu.setFont(new Font("Segoe UI", Font.BOLD, 20));
 		menuBar.add(ExportImportMenu);
 
-		JMenuItem mntmNewMenuItem = new JMenuItem("Import Key Pair");
-		// System file dialog for file choosing(Import).
-		mntmNewMenuItem.addActionListener(new ActionListener() {
+		JMenuItem ImportMenuItem = new JMenuItem("Import Key Pair");
+		// System file dialog for file choosing.
+		//Import
+		ImportMenuItem.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				final JFileChooser fileChooser = new JFileChooser(
 						FileSystemView.getFileSystemView().getHomeDirectory());
 				int result = fileChooser.showOpenDialog(frmOpenPgp);
 				if (result == JFileChooser.APPROVE_OPTION) {
-					importedKeyFile = fileChooser.getSelectedFile();
-					// opened file!
+					File selectedFile = fileChooser.getSelectedFile();
+					System.out.println("Selected file + " + selectedFile.getAbsolutePath());
+					if(selectedFile.getAbsolutePath().contains("PUBLIC")) {
+						try {
+							KeyManager.getInstance().importPublicKeyRingFromFile(selectedFile.getAbsolutePath().toString());
+						} catch (PGPException | IOException e1) {
+							// TODO Auto-generated catch block
+							e1.printStackTrace();
+						}
+					}
+					else if (selectedFile.getAbsolutePath().contains("PRIVATE")) {
+						
+						try {
+							KeyManager.getInstance().importSecretKeyRingFromFile(selectedFile.getCanonicalPath().toString());
+						} catch (IOException | PGPException e1) {
+							// TODO Auto-generated catch block
+							e1.printStackTrace();
+						}
+						
+					}
+					
+					userInfoList = KeyManager.getInstance().getUIUserInfo();
+					UpdateTableAfterImport();
 				}
 
 			}
 		});
-		mntmNewMenuItem.setFont(new Font("Segoe UI", Font.BOLD, 18));
-		ExportImportMenu.add(mntmNewMenuItem);
+		ImportMenuItem.setFont(new Font("Segoe UI", Font.BOLD, 18));
+		ExportImportMenu.add(ImportMenuItem);
 
-		JMenuItem mntmNewMenuItem_1 = new JMenuItem("Export Key Pair");
-		// System file dialog for file saving(Export).
-		mntmNewMenuItem_1.addActionListener(new ActionListener() {
+		JMenuItem ExportMenuItem = new JMenuItem("Export Key Pair");
+		ExportMenuItem.setEnabled(false);
+		// System file dialog for file saving.
+		//Export
+		ExportMenuItem.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				final JFileChooser fileChooser = new JFileChooser(
-						FileSystemView.getFileSystemView().getHomeDirectory());
-				int result = fileChooser.showSaveDialog(frmOpenPgp);
-				if (result == JFileChooser.APPROVE_OPTION) {
-					// Code for file saving?
-				}
+				ExportDialog dialog = new ExportDialog(selectedKeyId, selectedKeyIndex);
+				dialog.setVisible(true);
 			}
 		});
 		
+		/*final JFileChooser fileChooser = new JFileChooser(
+		FileSystemView.getFileSystemView().getHomeDirectory());
+		int result = fileChooser.showSaveDialog(frmOpenPgp);
+		if (result == JFileChooser.APPROVE_OPTION) {
+	
+			}*/
 		
-		
-		mntmNewMenuItem_1.setFont(new Font("Segoe UI", Font.BOLD, 18));
-		ExportImportMenu.add(mntmNewMenuItem_1);
+		ExportMenuItem.setFont(new Font("Segoe UI", Font.BOLD, 18));
+		ExportImportMenu.add(ExportMenuItem);
 
 		JMenu mnNewMenu = new JMenu("Decrypt/Encrypt file");
 		mnNewMenu.setFont(new Font("Segoe UI", Font.BOLD, 20));
@@ -305,6 +349,7 @@ public class MainMenuWindow {
 					String keyID = (String) keyPairTable.getValueAt(keyPairTable.getSelectedRow(), 1);
 					selectedKeyId = Long.parseLong(keyID);
 					mntmDeleteKeyPair.setEnabled(true);
+					ExportMenuItem.setEnabled(true);
 					
 					//Find index of selected key pair, by the key id;
 					System.out.println("Selected");
