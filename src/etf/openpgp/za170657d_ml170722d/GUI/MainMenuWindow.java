@@ -262,15 +262,20 @@ public class MainMenuWindow {
 		mntmNewMenuItem_1.setFont(new Font("Segoe UI", Font.BOLD, 18));
 		ExportImportMenu.add(mntmNewMenuItem_1);
 
-		JMenu mnNewMenu = new JMenu("Decrypt/Encrypt file");
+		JMenu mnNewMenu = new JMenu("Send/Recive Message");
 		mnNewMenu.setFont(new Font("Segoe UI", Font.BOLD, 20));
 		menuBar.add(mnNewMenu);
 
-		JMenuItem mntmNewMenuItem_2 = new JMenuItem("Encrypt file");
+		JMenuItem mntmNewMenuItem_2 = new JMenuItem("Send Message");
+		mntmNewMenuItem_2.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				new SendMessageDialog().setVisible(true);
+			}
+		});
 		mntmNewMenuItem_2.setFont(new Font("Segoe UI", Font.BOLD, 18));
 		mnNewMenu.add(mntmNewMenuItem_2);
 
-		JMenuItem mntmNewMenuItem_3 = new JMenuItem("Decrypt file");
+		JMenuItem mntmNewMenuItem_3 = new JMenuItem("Recive Message");
 		mntmNewMenuItem_3.setFont(new Font("Segoe UI", Font.BOLD, 18));
 		mnNewMenu.add(mntmNewMenuItem_3);
 		frmOpenPgp.getContentPane().setLayout(null);
