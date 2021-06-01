@@ -35,7 +35,7 @@ public class ExportDialog extends JDialog {
 	 */
 	public ExportDialog(long keyId, int keyIndex) {
 		setIconImage(Toolkit.getDefaultToolkit().getImage(ExportDialog.class.getResource("/javax/swing/plaf/metal/icons/ocean/info.png")));
-		setTitle("Export key");
+		setTitle("Export Key");
 		setResizable(false);
 		setModal(true);
 		setBounds(100, 100, 450, 300);
