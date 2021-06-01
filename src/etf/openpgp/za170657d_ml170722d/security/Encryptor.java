@@ -374,7 +374,7 @@ public class Encryptor {
 		return originalData;
 	}
 
-	public static void encryptData(byte[] message, PGPPrivateKey privateKey, List<PGPPublicKey> publicKeys,
+	private static void encryptDataSubStep(byte[] message, PGPPrivateKey privateKey, List<PGPPublicKey> publicKeys,
 			EncryptionAlg alg, boolean doZip, boolean doRadix64, boolean doSign, boolean doEncrypt,
 			String outputFilename) throws PGPException, IOException {
 
@@ -428,6 +428,18 @@ public class Encryptor {
 		}
 	}
 
+	private static void encryptData(int index, char[] password, byte[] message, EncryptionAlg encryptionAlg,
+			boolean doZip, boolean doRadix64, boolean doSign, boolean doEncrypt, String fileName)
+			throws PGPException, IOException {
+		KeyRing kr = KeyManager.getInstance().keyRingList.get(index);
+		PGPSecretKey sk = kr.getSecretKeyRing().getSecretKey();
+		PGPPrivateKey privKey = KeyManager.getPrivateKeyFromSecretKey(sk, password);
+		PGPPublicKey encKey = getEncryptinoKey(kr.getPublicKeyRing());
+
+		encryptDataSubStep(message, privKey, Collections.singletonList(encKey), encryptionAlg, doZip, doRadix64, doSign,
+				doEncrypt, fileName);
+	}
+
 	/*
 	 * public class
 	 */
@@ -449,29 +461,18 @@ public class Encryptor {
 			throws GeneralSecurityException, PGPException, IOException, InvalidExportType {
 		java.security.Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
 		java.security.Security.setProperty("crypto.policy", "unlimited");
-		KeyManager km = KeyManager.getInstance();
 
 		{
 			char[] password = "123".toCharArray();
 			String email = "luka2@gmail.com";
 			byte[] message = "hello world".getBytes();
 
-			km.generateRSAKeyPairEncryption(password, email, KeySize._2048b, KeySize._4096b);
+			KeyManager.getInstance().generateRSAKeyPairEncryption(password, email, KeySize._2048b, KeySize._4096b);
 
-			KeyRing kr = km.keyRingList.get(0);
-			PGPSecretKey sk = kr.getSecretKeyRing().getSecretKey();
-			PGPPrivateKey privKey = KeyManager.getPrivateKeyFromSecretKey(sk, password);
-			PGPPublicKey encKey = getEncryptinoKey(kr.getPublicKeyRing());
-
-			encryptData(message, privKey, Collections.singletonList(encKey), EncryptionAlg.CAST5, true, true, true,
-					true, "testData.pgp");
-
-			kr.exportKeyRing(new File("pub.asc"), KeyRingType.PUBLIC);
-			kr.exportKeyRing(new File("sec.asc"), KeyRingType.SECRET);
+			encryptData(0, password, message, EncryptionAlg.CAST5, true, true, true, true, "testData.pgp");
 		}
 
 		{
-
 			byte[] data = decryptData("testData.pgp", "123".toCharArray());
 			System.out.println(new String(data));
 		}
