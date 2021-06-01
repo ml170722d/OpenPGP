@@ -11,15 +11,21 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
+import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.openpgp.PGPCompressedData;
 import org.bouncycastle.openpgp.PGPCompressedDataGenerator;
@@ -30,15 +36,26 @@ import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPLiteralData;
 import org.bouncycastle.openpgp.PGPLiteralDataGenerator;
 import org.bouncycastle.openpgp.PGPObjectFactory;
+import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPPublicKeyEncryptedData;
 import org.bouncycastle.openpgp.PGPPublicKeyRing;
 import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
+import org.bouncycastle.openpgp.PGPSignature;
+import org.bouncycastle.openpgp.PGPSignatureGenerator;
+import org.bouncycastle.openpgp.PGPUtil;
 import org.bouncycastle.openpgp.jcajce.JcaPGPObjectFactory;
+import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptor;
+import org.bouncycastle.openpgp.operator.PublicKeyDataDecryptorFactory;
+import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePGPDataEncryptorBuilder;
+import org.bouncycastle.openpgp.operator.jcajce.JcePublicKeyDataDecryptorFactoryBuilder;
 import org.bouncycastle.openpgp.operator.jcajce.JcePublicKeyKeyEncryptionMethodGenerator;
 import org.bouncycastle.util.io.Streams;
+
+import etf.openpgp.za170657d_ml170722d.security.KeyRing.KeyRingType;
+import etf.openpgp.za170657d_ml170722d.security.error.InvalidExportType;
 
 public class Encryptor {
 
@@ -47,9 +64,9 @@ public class Encryptor {
 	public static enum EncryptionType {
 		REGULAR, ARMORED
 	}
-	
+
 	public static enum EncryptionAlg {
-		AES, CAST5
+		_3DES, CAST5
 	}
 
 	/*
@@ -141,14 +158,13 @@ public class Encryptor {
 		file.close();
 	}
 
-	/*----------------------------------------------------------------------------------*/
-
+	/*------------------------------------------------------------------------------------------------*/
 	/*
 	 * public methods
 	 */
 
-	public static void enctyptDataCAST5(String filename, List<PGPPublicKey> encryptionKeys, byte[] data, EncryptionType type)
-			throws IOException {
+	public static void enctyptDataCAST5(String filename, List<PGPPublicKey> encryptionKeys, byte[] data,
+			EncryptionType type) throws IOException {
 		OutputStream out;
 		switch (type) {
 		case REGULAR:
@@ -289,6 +305,89 @@ public class Encryptor {
 		return new EncryptedDataWithSecretKey(encData, matchingSecretKey);
 	}
 
+	public static byte[] decryptData(PGPPrivateKey privateKey, PGPPublicKeyEncryptedData encData) {
+		try {
+			PublicKeyDataDecryptorFactory dataDecryptorFactory = new JcePublicKeyDataDecryptorFactoryBuilder()
+					.setProvider("BC").build(privateKey);
+
+			InputStream clear = encData.getDataStream(dataDecryptorFactory);
+			byte[] literalData = Streams.readAll(clear);
+			clear.close();
+
+			if (encData.verify()) {
+				PGPObjectFactory litFact = new JcaPGPObjectFactory(literalData);
+				Object dataObj = litFact.nextObject();
+
+				if (dataObj instanceof PGPLiteralData) {
+					return Streams.readAll(((PGPLiteralData) dataObj).getDataStream());
+				} else if (dataObj instanceof PGPCompressedData) {
+					PGPCompressedData compressedData = (PGPCompressedData) dataObj;
+					return Streams.readAll(compressedData.getDataStream());
+				} else {
+					throw new RuntimeException("Unrecognized data object: " + dataObj.getClass());
+				}
+			}
+		} catch (PGPException | IOException e) {
+			e.printStackTrace();
+		}
+
+		throw new IllegalStateException("Modification check failed");
+	}
+
+	public static void encryptData(byte[] message, PGPPrivateKey privateKey, EncryptionAlg alg,
+			List<PGPPublicKey> publicKeys, boolean doZip, boolean doRadix64, boolean doSign, boolean doEncrypt,
+			String outputFilename) throws PGPException, IOException {
+
+		if (doSign) {
+			ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+			PGPSignatureGenerator sGen = new PGPSignatureGenerator(
+					new JcaPGPContentSignerBuilder(privateKey.getPublicKeyPacket().getAlgorithm(), PGPUtil.SHA384)
+							.setProvider("BC"));
+
+			sGen.init(PGPSignature.BINARY_DOCUMENT, privateKey);
+
+			BCPGOutputStream bcOut = new BCPGOutputStream(bOut);
+
+			sGen.generateOnePassVersion(false).encode(bcOut);
+
+			PGPLiteralDataGenerator lGen = new PGPLiteralDataGenerator();
+
+			OutputStream lOut = lGen.open(bcOut, PGPLiteralData.BINARY, "_CONSOLE", message.length, new Date());
+
+			for (int i = 0; i != message.length; i++) {
+				lOut.write(message[i]);
+				sGen.update(message[i]);
+			}
+
+			lGen.close();
+			sGen.generate().encode(bcOut);
+			message = bOut.toByteArray();
+		}
+
+		if (doZip) {
+			message = zipBytes("tmp.zip", message);
+		}
+
+		if (doEncrypt) {
+			switch (alg) {
+			case _3DES:
+				message = encrypt3DES(message, publicKeys);
+				break;
+			case CAST5:
+				message = encryptCAST5(publicKeys, message);
+				break;
+			default:
+				break;
+			}
+		}
+
+		if (doRadix64) {
+			writeDataToArmouredFile(outputFilename, message);
+		} else {
+			writeDataToHexFile(outputFilename, message);
+		}
+	}
+
 	/*
 	 * public class
 	 */
@@ -300,5 +399,60 @@ public class Encryptor {
 			this.pbEncryptedData = pbEncryptedData;
 			this.secretKey = secretKey;
 		}
+	}
+
+	/*------------------------------------------------------------------------------------------------*/
+	/*
+	 * test methods
+	 */
+	public static void testEncryptAndDecryptData()
+			throws GeneralSecurityException, PGPException, IOException, InvalidExportType {
+		java.security.Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
+		java.security.Security.setProperty("crypto.policy", "unlimited");
+		KeyManager km = KeyManager.getInstance();
+
+		char[] password = "123".toCharArray();
+		String email = "luka2@gmail.com";
+		byte[] message = "hello world".getBytes();
+		String filename = new File("").getAbsolutePath() + "\\testData";
+
+		km.generateRSAKeyPairEncryption(password, email, RSAUtil.KeySize._1024b, RSAUtil.KeySize._2048b);
+
+		KeyRing kr = km.getKeyRing(0);
+		PGPSecretKey sk = kr.getSecretKeyRing().getSecretKey();
+		PGPPrivateKey privKey = KeyManager.getPrivateKeyFromSecretKey(sk, password);
+		PGPPublicKey encryptionKey = getEncryptinoKey(kr.getPublicKeyRing());
+
+		encryptData(message, privKey, EncryptionAlg.CAST5, Collections.singletonList(encryptionKey), true, false, false,
+				true, filename + ".pgp");
+
+		EncryptedDataWithSecretKey tmp = getSecretKeyForEncryptedData(km.getAllSecretKeyRings(),
+				readEncryptedDataFromFile(filename + ".pgp"));
+		System.out.println();
+//		byte[] data = decryptData(KeyManager.getPrivateKeyFromSecretKey(tmp.secretKey, password), tmp.pbEncryptedData);
+
+		System.out.println(new String(message));
+//		System.out.println(new String(data));
+
+//		kr.exportKeyRing(new File(filename + "_pub.asc"), KeyRingType.PUBLIC);
+		kr.exportKeyRing(new File(filename + "_2priv.asc"), KeyRingType.SECRET);
+	}
+
+	public static void main(String[] args) {
+		try {
+			testEncryptAndDecryptData();
+		} catch (GeneralSecurityException | PGPException | IOException | InvalidExportType e) {
+			e.printStackTrace();
+		}
+		System.out.println("OK");
+//		try {
+//			byte[] b = Files.readAllBytes(Paths.get("D:\\etf online\\zp\\projekat\\OpenPGP\\testData"));
+//			System.out.println(new String(b));
+//			System.out.println(b);
+//
+//		} catch (IOException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
 	}
 }

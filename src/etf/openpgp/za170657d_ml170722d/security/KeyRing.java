@@ -163,6 +163,11 @@ public class KeyRing {
 		}
 	}
 
+	/**
+	 * 
+	 * @return list of encoded rings
+	 * @throws IOException
+	 */
 	public List<byte[]> getEncodedKeyRings() throws IOException {
 		byte[] encodedSecretKeyRing = (secretKeyRing == null) ? new byte[0] : secretKeyRing.getEncoded();
 		byte[] encodedPublicKeyRing = (publicKeyRing == null) ? new byte[0] : publicKeyRing.getEncoded();
@@ -201,6 +206,11 @@ public class KeyRing {
 		default:
 			throw new InvalidExportType();
 		}
+	}
+
+	@Override
+	public String toString() {
+		return "email: " + getEmail() + ", id: " + getKeyId();
 	}
 
 	private void exportSecretKeyRing(File fileName) throws IOException {

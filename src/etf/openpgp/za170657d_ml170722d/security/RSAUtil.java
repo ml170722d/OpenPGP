@@ -1,5 +1,6 @@
 package etf.openpgp.za170657d_ml170722d.security;
 
+import java.io.IOException;
 import java.security.AlgorithmParameterGenerator;
 import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
@@ -11,6 +12,10 @@ import java.security.Security;
 import java.security.Signature;
 import java.security.spec.RSAKeyGenParameterSpec;
 
+import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 public class RSAUtil {
@@ -37,7 +42,7 @@ public class RSAUtil {
 	 *                                  the specified algorithm is not available
 	 *                                  from the specified provider
 	 */
-	public static KeyPair generateKeyPair(KeySize bitKeySize) throws GeneralSecurityException {
+	public static KeyPair generateRSAKeyPair(KeySize bitKeySize) throws GeneralSecurityException {
 		init();
 
 		KeyPairGenerator keyPair = KeyPairGenerator.getInstance("RSA", "BC");
@@ -67,8 +72,8 @@ public class RSAUtil {
 	 *                                  the specified algorithm is not available
 	 *                                  from the specified provider
 	 */
-	public static KeyPair generateKeyPair() throws GeneralSecurityException {
-		return generateKeyPair(KeySize._4096b);
+	public static KeyPair generateRSAKeyPair() throws GeneralSecurityException {
+		return generateRSAKeyPair(KeySize._4096b);
 	}
 
 	/**
@@ -81,7 +86,7 @@ public class RSAUtil {
 	 *                                  the specified algorithm is not available
 	 *                                  from the specified provider
 	 */
-	public static KeyPair generateKeyPair(RSAKeyGenParameterSpec paramSpec) throws GeneralSecurityException {
+	public static KeyPair generateRSAKeyPair(RSAKeyGenParameterSpec paramSpec) throws GeneralSecurityException {
 		init();
 
 		KeyPairGenerator keyPair = KeyPairGenerator.getInstance("RSA", "BC");
@@ -149,7 +154,7 @@ public class RSAUtil {
 	 *                                  the specified algorithm is not available
 	 *                                  from the specified provider
 	 */
-	public static byte[] generateRSASigneture(PrivateKey RSAPrivate, byte[] input) throws GeneralSecurityException {
+	public static byte[] generateRSASignature(PrivateKey RSAPrivate, byte[] input) throws GeneralSecurityException {
 		init();
 
 		Signature signature = Signature.getInstance("SHA256withRSA", "BC");
@@ -184,5 +189,22 @@ public class RSAUtil {
 		signature.update(input);
 
 		return signature.verify(encSignature);
+	}
+
+	/**
+	 * Fix a faulty DSA signature that has been encoded using unsigned integers.
+	 *
+	 * @param encSignature the encoded signature.
+	 * @return the corrected signature with signed integer components.
+	 */
+	public static byte[] pathcRSASigature(byte[] encSignature) throws IOException {
+		ASN1Sequence seq = ASN1Sequence.getInstance(encSignature);
+
+		ASN1EncodableVector vec = new ASN1EncodableVector();
+		vec.add(new ASN1Integer(ASN1Integer.getInstance(seq.getObjectAt(0)).getPositiveValue()));
+
+		vec.add(new ASN1Integer(ASN1Integer.getInstance(seq.getObjectAt(1)).getPositiveValue()));
+
+		return new DERSequence(vec).getEncoded();
 	}
 }
