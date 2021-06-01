@@ -6,6 +6,7 @@ import java.awt.FlowLayout;
 
 import javax.swing.JButton;
 import javax.swing.JDialog;
+import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.border.EmptyBorder;
@@ -29,6 +30,7 @@ public class PassPhraseDialog extends JDialog {
 	private final JPanel contentPanel = new JPanel();
 	private JTextField PasswordTextField;
 	private JTextField RepeatTextField;
+	private MainMenuWindow mainWindow;
 
 	private String passphrase_password;
 	private String email;
@@ -45,10 +47,11 @@ public class PassPhraseDialog extends JDialog {
 	/**
 	 * Create the dialog.
 	 */
-	public PassPhraseDialog(String email, int keySize) {
+	public PassPhraseDialog(MainMenuWindow mainWindow,String email, int keySize) {
 
 		this.email = email;
 		this.keySize = keySize;
+		this.mainWindow = mainWindow;
 
 		setIconImage(Toolkit.getDefaultToolkit()
 				.getImage(PassPhraseDialog.class.getResource("/javax/swing/plaf/metal/icons/ocean/collapsed.gif")));
@@ -140,9 +143,9 @@ public class PassPhraseDialog extends JDialog {
 							default:
 								break;
 							}
-							
+						
 							System.out.println(km.getUIUserInfo());
-							
+									
 						} catch (PGPException err) {
 							err.printStackTrace();
 						} catch (GeneralSecurityException err) {
@@ -150,7 +153,8 @@ public class PassPhraseDialog extends JDialog {
 						} catch (Exception err) {
 							err.printStackTrace();
 						}
-
+						mainWindow.addKeyPair();
+						mainWindow.userInfoList = KeyManager.getInstance().getUIUserInfo();
 						dispose();
 					}
 				});
