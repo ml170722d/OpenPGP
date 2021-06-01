@@ -52,7 +52,7 @@ public class KeyManager {
 	}
 
 	private String storageFile;
-	private List<KeyRing> keyRingList;
+	public List<KeyRing> keyRingList;
 
 	private static KeyManager instance = null;
 
@@ -164,7 +164,7 @@ public class KeyManager {
 	 * @param pubKR key ring needed to extract public key
 	 * @return public key for ring
 	 */
-	public static PGPPublicKey getRSAPublicKeyFromKeyRing(PGPPublicKeyRing pubKR) {
+	public static PGPPublicKey getRSAEncryptionPublicKeyFromKeyRing(PGPPublicKeyRing pubKR) {
 		PGPPublicKey RSAkey = null;
 
 		Iterator<PGPPublicKey> itKey = pubKR.getPublicKeys();
@@ -424,13 +424,17 @@ public class KeyManager {
 		return uiList;
 	}
 
+	public KeyRing getKeyRing(int index) {
+		return keyRingList.get(index);
+	}
+	
 	/*------------------------------------------------------------------------------------------------*/
 	/*
 	 * private methods
 	 */
 
 	private KeyPair generateJavaRSAKeyPair(RSAUtil.KeySize size) throws GeneralSecurityException {
-		return RSAUtil.generateKeyPair(size);
+		return RSAUtil.generateRSAKeyPair(size);
 	}
 
 	private JcaPGPKeyPair generateOpenPGPKeyPair(KeyPair rsaKP, int algNum) throws PGPException {
@@ -563,11 +567,11 @@ public class KeyManager {
 			km.generateRSAKeyPairSign(password, email1, RSAUtil.KeySize._1024b);
 			km.generateRSAKeyPairSign(password, email2, RSAUtil.KeySize._1024b);
 
-			km.generateRSAKeyPairSign(password, email1, RSAUtil.KeySize._2048b);
-			km.generateRSAKeyPairSign(password, email2, RSAUtil.KeySize._2048b);
-
-			km.generateRSAKeyPairSign(password, email1, RSAUtil.KeySize._4096b);
-			km.generateRSAKeyPairSign(password, email2, RSAUtil.KeySize._4096b);
+//			km.generateRSAKeyPairSign(password, email1, RSAUtil.KeySize._2048b);
+//			km.generateRSAKeyPairSign(password, email2, RSAUtil.KeySize._2048b);
+//
+//			km.generateRSAKeyPairSign(password, email1, RSAUtil.KeySize._4096b);
+//			km.generateRSAKeyPairSign(password, email2, RSAUtil.KeySize._4096b);
 
 			/*
 			 * store app data to .ses file
@@ -597,6 +601,11 @@ public class KeyManager {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+
+	public static void main(String[] args) {
+		testGenerateExportAndImportKeys();
+		testGenerateStoreAndLoadKeys();
 	}
 
 }
