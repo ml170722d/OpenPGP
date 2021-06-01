@@ -14,7 +14,6 @@ import java.awt.Color;
 import java.awt.Toolkit;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
-import javax.swing.JTextArea;
 import javax.swing.filechooser.FileSystemView;
 
 import org.bouncycastle.openpgp.PGPException;
@@ -24,17 +23,36 @@ import etf.openpgp.za170657d_ml170722d.security.KeyManager;
 import javax.swing.JLabel;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import javax.swing.JScrollPane;
+import java.awt.GridLayout;
+import javax.swing.JTable;
+import javax.swing.border.LineBorder;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableModel;
+import javax.swing.ListSelectionModel;
 
 public class MainMenuWindow {
 
 	private JFrame frmOpenPgp;
 
 	private File importedKeyFile;
+	private JTable keyPairTable;
+	
+	private int selectedKeyIndex;
+	private long selectedKeyId;
+	public List<UserInfo> userInfoList;
 
 	public File getImportedKeyFile() {
 		return importedKeyFile;
@@ -60,24 +78,87 @@ public class MainMenuWindow {
 	 * Create the application.
 	 */
 	public MainMenuWindow() {
-		initialize();
+		initialize(this);
 		try {
 			KeyManager.getInstance().loadKeyRings();
 		} catch (PGPException e) {
 			e.printStackTrace();
 		}
 
-//		stores all keys that are used by app
-//		KeyManager.getInstance().storeKeyRings();
-
+		initializeKeyPairTable();
+		userInfoList = KeyManager.getInstance().getUIUserInfo();
 //		remove key ring from key manager
 //		KeyManager.getInstance().deleteKey(ind, password);
+		
+	}
+	
+
+	/**
+	 * Reads from file where the key pairs are stored and adds them to the key pair table.
+	 */
+	public void initializeKeyPairTable() {
+		System.out.println("Add new key pair");
+		ArrayList<UserInfo> list = (ArrayList<UserInfo>) KeyManager.getInstance().getUIUserInfo();
+
+		Iterator it = list.iterator();
+		
+		while(it.hasNext()) {	
+		 UserInfo item = (UserInfo) it.next();
+		 AddTableRow(item);
+		}
+		
 	}
 
 	/**
+	 * Adds single key pair (row) to the key pair table.
+	 */
+	public void addKeyPair() {
+		
+		ArrayList<UserInfo> list = (ArrayList<UserInfo>) KeyManager.getInstance().getUIUserInfo();
+		UserInfo item = (UserInfo) list.get(list.size()-1);
+		AddTableRow(item);
+		
+	}
+	
+	/**
+	 * Adds rows to the table.
+	 * @param userInfo - data for the new row
+	 */
+	private void AddTableRow(UserInfo userInfo) {
+		
+		 DefaultTableModel model = (DefaultTableModel) keyPairTable.getModel();
+		 String rowData[] = new String[3];
+		 rowData[0] = userInfo.getEmail();
+		 rowData[1] = Long.toString(userInfo.getKeyId());
+		 rowData[2] = userInfo.getValidDateFrom().toString();
+		 model.insertRow(model.getRowCount(), rowData);
+		
+	}
+	private void RemoveTableRow() {
+		
+		Iterator it = this.userInfoList.iterator();
+		System.out.println("Remove Table row!");
+		DefaultTableModel model = (DefaultTableModel) keyPairTable.getModel();
+		
+		int i = 0;
+		while(i < keyPairTable.getRowCount()) {
+			System.out.println("Deleting the row");
+			long temp_key_Id = Long.parseLong((String)model.getValueAt(i, 1));
+			if(temp_key_Id == selectedKeyId) {
+				model.removeRow(i);
+				
+				break;
+			}
+	
+			i++;
+		}
+		
+	}
+	
+	/**
 	 * Initialize the contents of the frame.
 	 */
-	private void initialize() {
+	private void initialize(MainMenuWindow host) {
 		frmOpenPgp = new JFrame();
 		frmOpenPgp.setResizable(false);
 		frmOpenPgp.setIconImage(Toolkit.getDefaultToolkit()
@@ -101,21 +182,42 @@ public class MainMenuWindow {
 		mntmAddNewKey.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				System.out.println("Clicked");
-				new NewKeyPairDialog().setVisible(true);
+				new NewKeyPairDialog(host).setVisible(true);
 				// Your code goes here ####
 			}
 		});
+		
+		//listener for window closing
+		frmOpenPgp.addWindowListener(new WindowAdapter()
+	     {
+	       
+			@Override
+	         public void windowClosing(WindowEvent e)
+	         {
+	             System.out.println("Closed");
+	             KeyManager.getInstance().storeKeyRings();
+	             e.getWindow().dispose();//discordapp.com/channels/@me
+	         }
+	     });
 
 		mntmAddNewKey.setFont(new Font("Segoe UI", Font.BOLD, 18));
 		mnManageKeyPairs.add(mntmAddNewKey);
 
 		JMenuItem mntmDeleteKeyPair = new JMenuItem("Delete Key Pair");
+		mntmDeleteKeyPair.setEnabled(false);
 		// This action listener if onClick listener for Delete Key Pair menu item
 		// This listener invokes dialog for deleting existing Key Pair
 		mntmDeleteKeyPair.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				// well not yet
-				// Your code goes here ####
+				System.out.println("Delete key");
+				KeyPairRemovalDialog dialog = new KeyPairRemovalDialog(host,host.selectedKeyIndex);
+				dialog.setVisible(true);
+				if(dialog.isSuccess()) {
+					dialog.setSuccess(false);
+					mntmDeleteKeyPair.setEnabled(false);
+					host.RemoveTableRow();	
+				}
+				
 			}
 		});
 		mntmDeleteKeyPair.setFont(new Font("Segoe UI", Font.BOLD, 18));
@@ -154,6 +256,9 @@ public class MainMenuWindow {
 				}
 			}
 		});
+		
+		
+		
 		mntmNewMenuItem_1.setFont(new Font("Segoe UI", Font.BOLD, 18));
 		ExportImportMenu.add(mntmNewMenuItem_1);
 
@@ -169,24 +274,56 @@ public class MainMenuWindow {
 		mntmNewMenuItem_3.setFont(new Font("Segoe UI", Font.BOLD, 18));
 		mnNewMenu.add(mntmNewMenuItem_3);
 		frmOpenPgp.getContentPane().setLayout(null);
+		
+		JScrollPane scrollPane = new JScrollPane();
+		scrollPane.setBounds(120, 52, 872, 340);
+		frmOpenPgp.getContentPane().add(scrollPane);
+		
+		
+		
+		DefaultTableModel tabelModel = new DefaultTableModel();
+		
+		keyPairTable = new JTable(tabelModel);
+		tabelModel.addColumn("E-Mail");
+		tabelModel.addColumn("Key-ID");
+		tabelModel.addColumn("Valid From");
+		keyPairTable.setFont(new Font("Arial Black", Font.PLAIN, 15));
+		keyPairTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		scrollPane.setViewportView(keyPairTable);
+		keyPairTable.setBorder(null);
+		keyPairTable.setBounds(0, 0, 1, 1);
+		
+		
 
-		JPanel panel = new JPanel();
-		panel.setBounds(59, 80, 969, 320);
-		frmOpenPgp.getContentPane().add(panel);
+		
+		keyPairTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+			
+			@Override
+			public void valueChanged(ListSelectionEvent e) {
+				// TODO Auto-generated method stub
+				if(!e.getValueIsAdjusting() && keyPairTable.getSelectedRow()!=-1) {
+					String keyID = (String) keyPairTable.getValueAt(keyPairTable.getSelectedRow(), 1);
+					selectedKeyId = Long.parseLong(keyID);
+					mntmDeleteKeyPair.setEnabled(true);
+					
+					//Find index of selected key pair, by the key id;
+					System.out.println("Selected");
+					Iterator it = userInfoList.iterator();
+					int index = -1;
+					while(it.hasNext()) {
+						
+						System.out.println("Search");
+						UserInfo item = (UserInfo) it.next();
+						if(item.getKeyId() == Long.parseLong(keyID)) {
+							host.selectedKeyIndex = item.getIndex();
+							System.out.println("Key ID " + keyID + " Index " + host.selectedKeyIndex);
+							break;
+						}
+					}
+				}
+			}
+		});
 
-		JLabel lblNewLabel = new JLabel("E-Mail");
-		lblNewLabel.setFont(new Font("Tahoma", Font.BOLD, 15));
-		lblNewLabel.setBounds(144, 51, 56, 16);
-		frmOpenPgp.getContentPane().add(lblNewLabel);
-
-		JLabel lblNewLabel_1 = new JLabel("Key ID");
-		lblNewLabel_1.setFont(new Font("Tahoma", Font.BOLD, 15));
-		lblNewLabel_1.setBounds(494, 51, 56, 16);
-		frmOpenPgp.getContentPane().add(lblNewLabel_1);
-
-		JLabel lblNewLabel_2 = new JLabel("Valid From");
-		lblNewLabel_2.setFont(new Font("Tahoma", Font.BOLD, 15));
-		lblNewLabel_2.setBounds(844, 51, 84, 16);
-		frmOpenPgp.getContentPane().add(lblNewLabel_2);
+	
 	}
 }
