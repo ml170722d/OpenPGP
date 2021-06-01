@@ -143,11 +143,9 @@ public class PassPhraseDialog extends JDialog {
 							default:
 								break;
 							}
-							
+						
 							System.out.println(km.getUIUserInfo());
-							
-							mainWindow.addKeyPair();
-							
+									
 						} catch (PGPException err) {
 							err.printStackTrace();
 						} catch (GeneralSecurityException err) {
@@ -155,9 +153,8 @@ public class PassPhraseDialog extends JDialog {
 						} catch (Exception err) {
 							err.printStackTrace();
 						}
-
-						
-						
+						mainWindow.addKeyPair();
+						mainWindow.userInfoList = KeyManager.getInstance().getUIUserInfo();
 						dispose();
 					}
 				});
