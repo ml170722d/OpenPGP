@@ -296,12 +296,7 @@ public class MainMenuWindow {
 			}
 		});
 		
-		/*final JFileChooser fileChooser = new JFileChooser(
-		FileSystemView.getFileSystemView().getHomeDirectory());
-		int result = fileChooser.showSaveDialog(frmOpenPgp);
-		if (result == JFileChooser.APPROVE_OPTION) {
-	
-			}*/
+		
 		
 		ExportMenuItem.setFont(new Font("Segoe UI", Font.BOLD, 18));
 		ExportImportMenu.add(ExportMenuItem);
