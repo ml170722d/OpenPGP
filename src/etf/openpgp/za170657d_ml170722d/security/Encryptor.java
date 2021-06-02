@@ -15,6 +15,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -428,15 +429,25 @@ public class Encryptor {
 		}
 	}
 
-	private static void encryptData(int index, char[] password, byte[] message, EncryptionAlg encryptionAlg,
+	public static void encryptData(int[] index, char[] password, byte[] message, EncryptionAlg encryptionAlg,
 			boolean doZip, boolean doRadix64, boolean doSign, boolean doEncrypt, String fileName)
 			throws PGPException, IOException {
-		KeyRing kr = KeyManager.getInstance().keyRingList.get(index);
-		PGPSecretKey sk = kr.getSecretKeyRing().getSecretKey();
-		PGPPrivateKey privKey = KeyManager.getPrivateKeyFromSecretKey(sk, password);
-		PGPPublicKey encKey = getEncryptinoKey(kr.getPublicKeyRing());
-
-		encryptDataSubStep(message, privKey, Collections.singletonList(encKey), encryptionAlg, doZip, doRadix64, doSign,
+		List<PGPPublicKey> encKey = new ArrayList<>();
+		
+		PGPPrivateKey privKey = null;
+		
+		for(int i = 0;i<index.length;i++) {
+			KeyRing kr = KeyManager.getInstance().keyRingList.get(i);
+			
+			if(doSign) {
+				PGPSecretKey sk = kr.getSecretKeyRing().getSecretKey();
+				privKey = KeyManager.getPrivateKeyFromSecretKey(sk, password);
+			}
+			encKey.add(getEncryptinoKey(kr.getPublicKeyRing()));
+			
+		}
+		
+		encryptDataSubStep(message, privKey, encKey, encryptionAlg, doZip, doRadix64, doSign,
 				doEncrypt, fileName);
 	}
 
@@ -469,7 +480,7 @@ public class Encryptor {
 
 			KeyManager.getInstance().generateRSAKeyPairEncryption(password, email, KeySize._2048b, KeySize._4096b);
 
-			encryptData(0, password, message, EncryptionAlg.CAST5, true, true, true, true, "testData.pgp");
+			//encryptData(0, password, message, EncryptionAlg.CAST5, true, true, true, true, "testData.pgp");
 		}
 
 		{

@@ -305,18 +305,21 @@ public class MainMenuWindow {
 		mnNewMenu.setFont(new Font("Segoe UI", Font.BOLD, 20));
 		menuBar.add(mnNewMenu);
 
-		JMenuItem mntmNewMenuItem_2 = new JMenuItem("Send Message");
-		mntmNewMenuItem_2.addActionListener(new ActionListener() {
+		//SEND MESSAGE
+		JMenuItem SendMessageMenuItem = new JMenuItem("Send Message");
+		SendMessageMenuItem.setEnabled(false);
+		SendMessageMenuItem.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				new SendMessageDialog().setVisible(true);
+				new SendMessageDialog(selectedKeyIndex).setVisible(true);
 			}
 		});
-		mntmNewMenuItem_2.setFont(new Font("Segoe UI", Font.BOLD, 18));
-		mnNewMenu.add(mntmNewMenuItem_2);
+		SendMessageMenuItem.setFont(new Font("Segoe UI", Font.BOLD, 18));
+		mnNewMenu.add(SendMessageMenuItem);
 
-		JMenuItem mntmNewMenuItem_3 = new JMenuItem("Recive Message");
-		mntmNewMenuItem_3.setFont(new Font("Segoe UI", Font.BOLD, 18));
-		mnNewMenu.add(mntmNewMenuItem_3);
+		JMenuItem ReciveMessageMenuItem = new JMenuItem("Recive Message");
+		ReciveMessageMenuItem.setEnabled(false);
+		ReciveMessageMenuItem.setFont(new Font("Segoe UI", Font.BOLD, 18));
+		mnNewMenu.add(ReciveMessageMenuItem);
 		frmOpenPgp.getContentPane().setLayout(null);
 		
 		JScrollPane scrollPane = new JScrollPane();
@@ -350,6 +353,8 @@ public class MainMenuWindow {
 					selectedKeyId = Long.parseLong(keyID);
 					mntmDeleteKeyPair.setEnabled(true);
 					ExportMenuItem.setEnabled(true);
+					SendMessageMenuItem.setEnabled(true);
+					ReciveMessageMenuItem.setEnabled(true);
 					
 					//Find index of selected key pair, by the key id;
 					System.out.println("Selected");

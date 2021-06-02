@@ -8,9 +8,14 @@ import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JPanel;
+import javax.swing.JPasswordField;
 import javax.swing.border.EmptyBorder;
 import javax.swing.filechooser.FileSystemView;
 
+import org.bouncycastle.openpgp.PGPException;
+
+import etf.openpgp.za170657d_ml170722d.security.Encryptor;
+import etf.openpgp.za170657d_ml170722d.security.Encryptor.EncryptionAlg;
 import etf.openpgp.za170657d_ml170722d.security.KeyManager;
 
 import java.awt.Toolkit;
@@ -26,10 +31,14 @@ import javax.swing.JList;
 import javax.swing.ListSelectionModel;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.IOException;
 import java.awt.event.ActionEvent;
 import javax.swing.AbstractListModel;
 import javax.swing.JComboBox;
 import javax.swing.DefaultComboBoxModel;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.JTextField;
 
 public class SendMessageDialog extends JDialog {
 
@@ -41,19 +50,16 @@ public class SendMessageDialog extends JDialog {
 	private boolean zip;
 	private boolean radix;
 	
+	private String selectedAlg;
+	private String signKey;
+	ArrayList<String> selected_keys_list;
+	private JTextField passField;
+	
 
 	/**
 	 * Launch the application.
 	 */
-	public static void main(String[] args) {
-		try {
-			SendMessageDialog dialog = new SendMessageDialog();
-			dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-			dialog.setVisible(true);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
+
 	
 	
 	private void InitializeList(DefaultListModel<String> model) {
@@ -75,7 +81,7 @@ public class SendMessageDialog extends JDialog {
 	/**
 	 * Create the dialog.
 	 */
-	public SendMessageDialog() {
+	public SendMessageDialog(int index) {
 		setIconImage(Toolkit.getDefaultToolkit().getImage(SendMessageDialog.class.getResource("/com/sun/java/swing/plaf/windows/icons/Computer.gif")));
 		setTitle("Send Message");
 		setResizable(false);
@@ -111,17 +117,44 @@ public class SendMessageDialog extends JDialog {
 		DefaultListModel<String> model = new DefaultListModel<>();
 		InitializeList(model);
 		JList<String> enc_list = new JList<>(model);
+		//Public keys for encryptions!
+		enc_list.addListSelectionListener(new ListSelectionListener() {
+			public void valueChanged(ListSelectionEvent e) {
+				if(!e.getValueIsAdjusting()) {
+					
+					JList list = (JList) e.getSource();
+					selected_keys_list = (ArrayList<String>) list.getSelectedValuesList();
+					Iterator<String> it = selected_keys_list.iterator();
+				
+					while(it.hasNext()) {
+						System.out.println(it.next());
+					}
+					System.out.println("------------");
+				}
+				
+			}
+		});
 		enc_list.setEnabled(false);	
 		scrollPane.setViewportView(enc_list);
 		
 	
 		JScrollPane scrollPane_1 = new JScrollPane();
-		scrollPane_1.setBounds(286, 185, 225, 38);
+		scrollPane_1.setBounds(240, 187, 225, 40);
 		contentPanel.add(scrollPane_1);
-		
+	
 		DefaultListModel<String> model2 = new DefaultListModel<String>();
 		InitializeList(model2);
 		JList<String> sign_list = new JList<>(model2);
+		//Private key for digital signature!
+		sign_list.addListSelectionListener(new ListSelectionListener() {
+			public void valueChanged(ListSelectionEvent e) {
+				if(!e.getValueIsAdjusting()) {
+					signKey = sign_list.getSelectedValue();
+					System.out.println("Private key " + signKey);
+					passField.setEnabled(true);
+				}
+			}
+		});
 		sign_list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		sign_list.setEnabled(false);
 		scrollPane_1.setViewportView(sign_list);
@@ -160,14 +193,29 @@ public class SendMessageDialog extends JDialog {
 		contentPanel.add(btnNewButton);
 		
 		JComboBox comboBox = new JComboBox();
+		comboBox.setEnabled(false);
+		comboBox.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				JComboBox comboBox = (JComboBox) e.getSource();
+				selectedAlg = (String) comboBox.getSelectedItem();
+				System.out.println("Selected " + selectedAlg);
+			}
+		});
 		comboBox.setModel(new DefaultComboBoxModel(new String[] {"3DES + EDE", "CAST5"}));
 		comboBox.setBounds(385, 104, 95, 38);
 		contentPanel.add(comboBox);
 		
 		JCheckBox chckbxIntegrity = new JCheckBox("Integrity Check");
+		chckbxIntegrity.setEnabled(false);
 		chckbxIntegrity.setFont(new Font("Tahoma", Font.PLAIN, 16));
 		chckbxIntegrity.setBounds(224, 113, 141, 25);
 		contentPanel.add(chckbxIntegrity);
+		
+		passField = new JPasswordField();
+		passField.setEnabled(false);
+		passField.setBounds(535, 187, 225, 40);
+		contentPanel.add(passField);
+		passField.setColumns(10);
 		
 
 		{
@@ -180,11 +228,16 @@ public class SendMessageDialog extends JDialog {
 				okButton.addActionListener(new ActionListener() {
 					public void actionPerformed(ActionEvent e) {
 						//OK BUTTON CLICKED
-						
-						if(digital_sign) {
-							//Open password prompt
+						System.out.println();
+						//if(
+						try {
+							int arr[] = {0,1,2};
+							Encryptor.encryptData(arr, null, "alfa".getBytes(), EncryptionAlg._3DES, false, false, false, true, "test.pgp");
+						} catch (PGPException | IOException e1) {
+							// TODO Auto-generated catch block
+							e1.printStackTrace();
 						}
-						
+					
 					}
 				});
 				okButton.setActionCommand("OK");
@@ -204,10 +257,14 @@ public class SendMessageDialog extends JDialog {
 				if(box.isSelected()) {
 					encryption = true;
 					enc_list.setEnabled(true);
+					chckbxIntegrity.setEnabled(true);
+					comboBox.setEnabled(true);
 				}
 				else {
 					encryption = false;
 					enc_list.setEnabled(false);
+					chckbxIntegrity.setEnabled(false);
+					comboBox.setEnabled(false);
 				}
 			}
 		});
