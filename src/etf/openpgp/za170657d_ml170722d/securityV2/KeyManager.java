@@ -93,7 +93,7 @@ public class KeyManager {
 		System.out.println("Number of keys loaded: " + KeyChain.getChain().size());
 	}
 
-	public static void deleteKey(int index, int type) throws InvalidType {
+	public static void deleteKey(int index, int type) throws Exception {
 		KeyRing kr = KeyChain.getKeyRing(index);
 		kr.removeKeyRing(type);
 		if (!kr.hasPrivateKey() && !kr.hasPublicKey())
@@ -114,16 +114,17 @@ public class KeyManager {
 			KeyChain.getChain().remove(kr);
 	}
 
-	public static void exportKey(int index, int type) throws InvalidType, IOException {
-		KeyChain.getKeyRing(index).exportKeyRing(exportPath, type);
+	public static void exportKey(int index, int type, String fileName) throws InvalidType, IOException {
+		KeyChain.getKeyRing(index).exportKeyRing(exportPath, fileName, type);
 	}
 
-	public static void exportKey(long keyId, int type) throws InvalidType, IOException, Exception {
-		KeyChain.getKeyRing(keyId).exportKeyRing(exportPath, type);
+	public static void exportKey(long keyId, int type, String fileName) throws InvalidType, IOException, Exception {
+		KeyChain.getKeyRing(keyId).exportKeyRing(exportPath, fileName, type);
 	}
 
-	public static void exportKey(byte[] fingerprint, int type) throws InvalidType, IOException, Exception {
-		KeyChain.getKeyRing(fingerprint).exportKeyRing(exportPath, type);
+	public static void exportKey(byte[] fingerprint, int type, String fileName)
+			throws InvalidType, IOException, Exception {
+		KeyChain.getKeyRing(fingerprint).exportKeyRing(exportPath, fileName, type);
 	}
 
 	private static KeyPair generateJavaRSAKeyPair(int size) throws NoSuchAlgorithmException {
@@ -212,7 +213,7 @@ public class KeyManager {
 		KeyChain.add(kr);
 	}
 
-	public static void main(String[] args) throws NoSuchAlgorithmException, PGPException, InvalidType, IOException {
+	public static void main(String[] args) throws Exception {
 		java.security.Security.setProperty("crypto.policy", "unlimited");
 		KeyManager.init();
 		{
@@ -237,8 +238,8 @@ public class KeyManager {
 			}
 
 			for (int i = 0; i < KeyChain.getChain().size(); i++) {
-				KeyManager.exportKey(i, KeyRingTags.PUBLIC);
-				KeyManager.exportKey(i, KeyRingTags.PRIVATE);
+				KeyManager.exportKey(i, KeyRingTags.PUBLIC, "pub" + i);
+				KeyManager.exportKey(i, KeyRingTags.PRIVATE, "priv" + i);
 			}
 
 			System.out.println(KeyChain.getChain().size());

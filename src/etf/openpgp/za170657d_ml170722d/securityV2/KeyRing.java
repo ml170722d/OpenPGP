@@ -12,6 +12,7 @@ import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPrivateKey;
+import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPPublicKeyRing;
 import org.bouncycastle.openpgp.PGPSecretKey;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
@@ -44,11 +45,6 @@ public class KeyRing {
 		this.secretKeyRing = secretKeyRing;
 	}
 
-	public KeyRing(PGPSecretKeyRing secretKeyRing, PGPPublicKeyRing publicKeyRing) {
-		this.publicKeyRing = publicKeyRing;
-		this.secretKeyRing = secretKeyRing;
-	}
-
 	public KeyRing(byte[] publicKeyRingEncoded, byte[] secretKeyRingEncoded) throws IOException, PGPException {
 		if (secretKeyRingEncoded.length > 0)
 			secretKeyRing = new PGPSecretKeyRing(secretKeyRingEncoded, new JcaKeyFingerprintCalculator());
@@ -70,6 +66,14 @@ public class KeyRing {
 
 	public PGPPublicKeyRing getPublicKeyRing() {
 		return publicKeyRing;
+	}
+
+	public PGPPublicKey getPublicKey() {
+		return publicKeyRing.getPublicKey();
+	}
+
+	public PGPSecretKey getSecretKey() {
+		return secretKeyRing.getSecretKey();
 	}
 
 	public String getUserId() {
@@ -124,7 +128,7 @@ public class KeyRing {
 		this.secretKeyRing = secretKeyRing;
 	}
 
-	public void removeKeyRing(int type) throws InvalidType {
+	public void removeKeyRing(int type) throws Exception {
 		switch (type) {
 		case KeyRingTags.PUBLIC:
 			this.publicKeyRing = null;
@@ -133,11 +137,15 @@ public class KeyRing {
 			if (secretKeyRing == null)
 				return;
 
-			EnterPasswordPanel panel = new EnterPasswordPanel();
-			if (isPasswordForSecretKey(this.secretKeyRing.getSecretKey(), panel.getPassword()))
-				this.secretKeyRing = null;
+			for (int i = 3; i > 0; i--) {
+				EnterPasswordPanel panel = new EnterPasswordPanel(i);
+				if (isPasswordForSecretKey(this.secretKeyRing.getSecretKey(), panel.getPassword())) {
+					this.secretKeyRing = null;
+					return;
+				}
+			}
 
-			break;
+			throw new Exception("Failed to inter correct password. Can't delete secter key.");
 		default:
 			throw new InvalidType();
 		}
@@ -176,13 +184,13 @@ public class KeyRing {
 		privateOut.close();
 	}
 
-	public void exportKeyRing(String fileName, int keyType) throws InvalidType, IOException {
+	public void exportKeyRing(String filePath, String fileName, int keyType) throws InvalidType, IOException {
 		switch (keyType) {
 		case KeyRingTags.PUBLIC:
-			exportPublicKeyRing(new File(fileName + "public/" + getKeyId() + ".asc"));
+			exportPublicKeyRing(new File(filePath + "public/" + fileName + ".asc"));
 			break;
 		case KeyRingTags.PRIVATE:
-			exportSecretKeyRing(new File(fileName + "secret/" + getKeyId() + ".asc"));
+			exportSecretKeyRing(new File(filePath + "secret/" + fileName + ".asc"));
 			break;
 		default:
 			throw new InvalidType();
