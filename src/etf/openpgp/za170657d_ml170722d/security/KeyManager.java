@@ -57,6 +57,8 @@ public class KeyManager {
 	private static KeyManager instance = null;
 
 	private KeyManager(String storageFilePath) throws IOException {
+		RSAUtil.init();
+		
 		File storage = new File(storageFilePath);
 
 		if (!storage.exists())
@@ -131,7 +133,6 @@ public class KeyManager {
 	 * @throws IOException
 	 */
 	protected static KeyManager getInstance(String storagePath) throws IOException {
-
 		File file = new File(storagePath);
 		if (!file.exists())
 			file.createNewFile();

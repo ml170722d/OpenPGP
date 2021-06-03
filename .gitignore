@@ -1,5 +1,6 @@
 /bin/
-keyPair/*
+keys/*/*
 .classpath
 
-!keyPair/placeholder
+!keys/*/placeholder
+!data/placeholder

@@ -296,27 +296,30 @@ public class MainMenuWindow {
 			}
 		});
 		
-		/*final JFileChooser fileChooser = new JFileChooser(
-		FileSystemView.getFileSystemView().getHomeDirectory());
-		int result = fileChooser.showSaveDialog(frmOpenPgp);
-		if (result == JFileChooser.APPROVE_OPTION) {
-	
-			}*/
+		
 		
 		ExportMenuItem.setFont(new Font("Segoe UI", Font.BOLD, 18));
 		ExportImportMenu.add(ExportMenuItem);
 
-		JMenu mnNewMenu = new JMenu("Decrypt/Encrypt file");
+		JMenu mnNewMenu = new JMenu("Send/Recive Message");
 		mnNewMenu.setFont(new Font("Segoe UI", Font.BOLD, 20));
 		menuBar.add(mnNewMenu);
 
-		JMenuItem mntmNewMenuItem_2 = new JMenuItem("Encrypt file");
-		mntmNewMenuItem_2.setFont(new Font("Segoe UI", Font.BOLD, 18));
-		mnNewMenu.add(mntmNewMenuItem_2);
+		//SEND MESSAGE
+		JMenuItem SendMessageMenuItem = new JMenuItem("Send Message");
+		SendMessageMenuItem.setEnabled(false);
+		SendMessageMenuItem.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				new SendMessageDialog(selectedKeyIndex).setVisible(true);
+			}
+		});
+		SendMessageMenuItem.setFont(new Font("Segoe UI", Font.BOLD, 18));
+		mnNewMenu.add(SendMessageMenuItem);
 
-		JMenuItem mntmNewMenuItem_3 = new JMenuItem("Decrypt file");
-		mntmNewMenuItem_3.setFont(new Font("Segoe UI", Font.BOLD, 18));
-		mnNewMenu.add(mntmNewMenuItem_3);
+		JMenuItem ReciveMessageMenuItem = new JMenuItem("Recive Message");
+		ReciveMessageMenuItem.setEnabled(false);
+		ReciveMessageMenuItem.setFont(new Font("Segoe UI", Font.BOLD, 18));
+		mnNewMenu.add(ReciveMessageMenuItem);
 		frmOpenPgp.getContentPane().setLayout(null);
 		
 		JScrollPane scrollPane = new JScrollPane();
@@ -350,6 +353,8 @@ public class MainMenuWindow {
 					selectedKeyId = Long.parseLong(keyID);
 					mntmDeleteKeyPair.setEnabled(true);
 					ExportMenuItem.setEnabled(true);
+					SendMessageMenuItem.setEnabled(true);
+					ReciveMessageMenuItem.setEnabled(true);
 					
 					//Find index of selected key pair, by the key id;
 					System.out.println("Selected");
