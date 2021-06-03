@@ -247,25 +247,25 @@ public class KeyManager {
 			KeyManager.storeKeyChain();
 		}
 
-		{
-			try {
-				KeyManager.importKeyRingFromFile(
-						"D:\\etf online\\zp\\projekat\\OpenPGP\\keys\\public\\496935046168542089.asc");
-			} catch (AlreadyInUse e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			System.out.println(KeyChain.getChain().size());
-		}
-
-		{
-			System.out.println(KeyChain.getKeyRing(0).getUserId());
-			System.out.println(KeyChain.getKeyRing(1).getUserId());
-			System.out.println(KeyChain.getChain().size());
-			KeyManager.deleteKey(0, KeyRingTags.PUBLIC);
-			KeyManager.deleteKey(1, KeyRingTags.PRIVATE);
-			KeyManager.deleteKey(0, KeyRingTags.PRIVATE);
-			System.out.println(KeyChain.getChain().size());
-		}
+//		{
+//			try {
+//				KeyManager.importKeyRingFromFile(
+//						"D:\\etf online\\zp\\projekat\\OpenPGP\\keys\\public\\496935046168542089.asc");
+//			} catch (AlreadyInUse e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			}
+//			System.out.println(KeyChain.getChain().size());
+//		}
+//
+//		{
+//			System.out.println(KeyChain.getKeyRing(0).getUserId());
+//			System.out.println(KeyChain.getKeyRing(1).getUserId());
+//			System.out.println(KeyChain.getChain().size());
+//			KeyManager.deleteKey(0, KeyRingTags.PUBLIC);
+//			KeyManager.deleteKey(1, KeyRingTags.PRIVATE);
+//			KeyManager.deleteKey(0, KeyRingTags.PRIVATE);
+//			System.out.println(KeyChain.getChain().size());
+//		}
 	}
 }
