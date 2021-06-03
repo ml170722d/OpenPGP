@@ -47,7 +47,7 @@ public class PassPhraseDialog extends JDialog {
 	/**
 	 * Create the dialog.
 	 */
-	public PassPhraseDialog(MainMenuWindow mainWindow,String email, int keySize) {
+	public PassPhraseDialog(MainMenuWindow mainWindow, String email, int keySize) {
 
 		this.email = email;
 		this.keySize = keySize;
@@ -128,24 +128,24 @@ public class PassPhraseDialog extends JDialog {
 							KeyManager km = KeyManager.getInstance();
 							switch (keySize) {
 							case 1024:
-								km.generateRSAKeyPairSign(passphrase_password.toCharArray(), email,
-										RSAUtil.KeySize._1024b);
+								km.generateRSAKeyPairEncryption(passphrase_password.toCharArray(), email,
+										RSAUtil.KeySize._1024b, RSAUtil.KeySize._1024b);
 								break;
 							case 2048:
-								km.generateRSAKeyPairSign(passphrase_password.toCharArray(), email,
-										RSAUtil.KeySize._2048b);
+								km.generateRSAKeyPairEncryption(passphrase_password.toCharArray(), email,
+										RSAUtil.KeySize._2048b, RSAUtil.KeySize._2048b);
 								break;
 							case 4096:
-								km.generateRSAKeyPairSign(passphrase_password.toCharArray(), email,
-										RSAUtil.KeySize._4096b);
+								km.generateRSAKeyPairEncryption(passphrase_password.toCharArray(), email,
+										RSAUtil.KeySize._4096b, RSAUtil.KeySize._4096b);
 								break;
 
 							default:
 								break;
 							}
-						
+
 							System.out.println(km.getUIUserInfo());
-									
+
 						} catch (PGPException err) {
 							err.printStackTrace();
 						} catch (GeneralSecurityException err) {
