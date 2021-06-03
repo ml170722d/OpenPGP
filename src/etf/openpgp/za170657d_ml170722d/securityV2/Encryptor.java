@@ -40,11 +40,11 @@ public class Encryptor {
 
 	private static int BUFFER_SIZE = 1 << 12;
 
-	public static void enctyptFile(String outputFilePath, String inputFilePath, PGPPublicKey publicKey,
-			PGPSecretKey secretKey, boolean integrityCheck, boolean radix64, boolean encrypt, int symmetricAlgorithm,
-			boolean zip, boolean sign) throws Exception {
+	public static void enctyptFile(String outputFilePath, String inputFilePath, String embededFileName,
+			PGPPublicKey publicKey, PGPSecretKey secretKey, boolean integrityCheck, boolean radix64, boolean encrypt,
+			int symmetricAlgorithm, boolean zip, boolean sign) throws Exception {
 
-		String embededFileName = "embeded";
+//		String embededFileName = "embeded";
 
 		InputStream in = new FileInputStream(inputFilePath);
 		OutputStream out = new BufferedOutputStream(new FileOutputStream(outputFilePath));
@@ -131,11 +131,11 @@ public class Encryptor {
 		}
 	}
 
-	public static void enctyptFile(String outputFilePath, String inputFilePath, List<PGPPublicKey> publicKeys,
-			PGPSecretKey secretKey, boolean integrityCheck, boolean radix64, boolean encrypt, int symmetricAlgorithm,
-			boolean zip, boolean sign) throws Exception {
+	public static void enctyptFile(String outputFilePath, String inputFilePath, String embededFileName,
+			List<PGPPublicKey> publicKeys, PGPSecretKey secretKey, boolean integrityCheck, boolean radix64,
+			boolean encrypt, int symmetricAlgorithm, boolean zip, boolean sign) throws Exception {
 
-		String embededFileName = "embeded";
+//		String embededFileName = "embeded";
 
 		InputStream in = new FileInputStream(inputFilePath);
 		OutputStream out = new BufferedOutputStream(new FileOutputStream(outputFilePath));
@@ -230,21 +230,20 @@ public class Encryptor {
 		java.security.Security.setProperty("crypto.policy", "unlimited");
 		KeyManager.init();
 
-		char[] password = "a".toCharArray();
-		String userId[] = { "luka <luka>", "aki <aki>", "a <a>", "b <b>" };
+		KeyManager.loadKeyChain();
 
 		int index = 0;
-		for (int i = 0; i < userId.length; i++) {
-			KeyManager.generateRSAKeyPair(password, userId[i], KeySizeTags._1024b);
+		for (int i = 0; i < KeyChain.getChain().size(); i++) {
 			KeyManager.exportKey(index, KeyRingTags.PUBLIC, "pub_" + index);
 			KeyManager.exportKey(index, KeyRingTags.PRIVATE, "priv_" + index);
+			System.out.println(index + ": " + KeyChain.getKeyRing(index).getUserId());
 			index++;
 		}
 
 		{
 			String outputFileName = "all_text.txt.gpg";
 			String inputFilePath = "text.txt";
-//			String inputFileName = "tmp";
+			String inputFileName = "data.txt";
 
 			// receivers
 			List<PGPPublicKey> list = new ArrayList<PGPPublicKey>();
@@ -256,169 +255,13 @@ public class Encryptor {
 			PGPSecretKey secretKey = KeyChain.getKeyRing(0).getSecretKey();
 
 			try {
-				Encryptor.enctyptFile(outputFileName, inputFilePath, list, secretKey, true, true, true,
+				Encryptor.enctyptFile(outputFileName, inputFilePath, inputFileName, list, secretKey, true, true, true,
 						SymmetricKeyAlgorithmTags.CAST5, true, true);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
-		
-		//fails
-		{
-			String outputFileName = "notSigned_text.txt.gpg";
-			String inputFilePath = "text.txt";
-//			String inputFileName = "tmp";
 
-			// receivers
-			List<PGPPublicKey> list = new ArrayList<PGPPublicKey>();
-			for (int i = 1; i < KeyChain.getChain().size(); i++) {
-				PGPPublicKey publicKey = KeyChain.getKeyRing(i).getPublicKey();
-				list.add(publicKey);
-			}
-			// sender
-			PGPSecretKey secretKey = KeyChain.getKeyRing(0).getSecretKey();
-
-			try {
-				Encryptor.enctyptFile(outputFileName, inputFilePath, list, secretKey, true, true, true,
-						SymmetricKeyAlgorithmTags.CAST5, true, true);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
-		
-		{
-			String outputFileName = "notZiped_text.txt.gpg";
-			String inputFilePath = "text.txt";
-//			String inputFileName = "tmp";
-
-			// receivers
-			List<PGPPublicKey> list = new ArrayList<PGPPublicKey>();
-			for (int i = 1; i < KeyChain.getChain().size(); i++) {
-				PGPPublicKey publicKey = KeyChain.getKeyRing(i).getPublicKey();
-				list.add(publicKey);
-			}
-			// sender
-			PGPSecretKey secretKey = KeyChain.getKeyRing(0).getSecretKey();
-
-			try {
-				Encryptor.enctyptFile(outputFileName, inputFilePath, list, secretKey, true, true, true,
-						SymmetricKeyAlgorithmTags.CAST5, false, true);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
-		
-		//fails
-		{
-			String outputFileName = "notSignedZiped_text.txt.gpg";
-			String inputFilePath = "text.txt";
-//			String inputFileName = "tmp";
-
-			// receivers
-			List<PGPPublicKey> list = new ArrayList<PGPPublicKey>();
-			for (int i = 1; i < KeyChain.getChain().size(); i++) {
-				PGPPublicKey publicKey = KeyChain.getKeyRing(i).getPublicKey();
-				list.add(publicKey);
-			}
-			// sender
-			PGPSecretKey secretKey = KeyChain.getKeyRing(0).getSecretKey();
-
-			try {
-				Encryptor.enctyptFile(outputFileName, inputFilePath, list, secretKey, true, true, true,
-						SymmetricKeyAlgorithmTags.CAST5, false, true);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
-		
-		{
-			String outputFileName = "notChecked_text.txt.gpg";
-			String inputFilePath = "text.txt";
-//			String inputFileName = "tmp";
-
-			// receivers
-			List<PGPPublicKey> list = new ArrayList<PGPPublicKey>();
-			for (int i = 1; i < KeyChain.getChain().size(); i++) {
-				PGPPublicKey publicKey = KeyChain.getKeyRing(i).getPublicKey();
-				list.add(publicKey);
-			}
-			// sender
-			PGPSecretKey secretKey = KeyChain.getKeyRing(0).getSecretKey();
-
-			try {
-				Encryptor.enctyptFile(outputFileName, inputFilePath, list, secretKey, false, true, true,
-						SymmetricKeyAlgorithmTags.CAST5, true, true);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
-		
-		{
-			String outputFileName = "notEncrypted_text.txt.gpg";
-			String inputFilePath = "text.txt";
-//			String inputFileName = "tmp";
-
-			// receivers
-			List<PGPPublicKey> list = new ArrayList<PGPPublicKey>();
-			for (int i = 1; i < KeyChain.getChain().size(); i++) {
-				PGPPublicKey publicKey = KeyChain.getKeyRing(i).getPublicKey();
-				list.add(publicKey);
-			}
-			// sender
-			PGPSecretKey secretKey = KeyChain.getKeyRing(0).getSecretKey();
-
-			try {
-				Encryptor.enctyptFile(outputFileName, inputFilePath, list, secretKey, true, true, false,
-						SymmetricKeyAlgorithmTags.CAST5, true, true);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
-		
-		{
-			String outputFileName = "notRadix64_text.txt.gpg";
-			String inputFilePath = "text.txt";
-//			String inputFileName = "tmp";
-
-			// receivers
-			List<PGPPublicKey> list = new ArrayList<PGPPublicKey>();
-			for (int i = 1; i < KeyChain.getChain().size(); i++) {
-				PGPPublicKey publicKey = KeyChain.getKeyRing(i).getPublicKey();
-				list.add(publicKey);
-			}
-			// sender
-			PGPSecretKey secretKey = KeyChain.getKeyRing(0).getSecretKey();
-
-			try {
-				Encryptor.enctyptFile(outputFileName, inputFilePath, list, secretKey, true, false, true,
-						SymmetricKeyAlgorithmTags.CAST5, true, true);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
-		
-		//fails
-		{
-			String outputFileName = "notAll_text.txt.gpg";
-			String inputFilePath = "text.txt";
-//			String inputFileName = "tmp";
-
-			// receivers
-			List<PGPPublicKey> list = new ArrayList<PGPPublicKey>();
-			for (int i = 1; i < KeyChain.getChain().size(); i++) {
-				PGPPublicKey publicKey = KeyChain.getKeyRing(i).getPublicKey();
-				list.add(publicKey);
-			}
-			// sender
-			PGPSecretKey secretKey = KeyChain.getKeyRing(0).getSecretKey();
-
-			try {
-				Encryptor.enctyptFile(outputFileName, inputFilePath, list, secretKey, false, false, false,
-						SymmetricKeyAlgorithmTags.CAST5, false, true);
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
 	}
 
 }
