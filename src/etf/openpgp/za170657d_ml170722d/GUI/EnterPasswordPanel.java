@@ -14,8 +14,8 @@ public class EnterPasswordPanel extends JPanel {
 
 	private char[] password;
 	
-	public EnterPasswordPanel() {
-		JLabel label = new JLabel("Enter password:");
+	public EnterPasswordPanel(int attemptsLeft) {
+		JLabel label = new JLabel("Enter password: ("+attemptsLeft+" attempts left)");
 		JPasswordField pass = new JPasswordField(30);
 		this.add(label);
 		this.add(pass);
