@@ -34,12 +34,29 @@ import etf.openpgp.za170657d_ml170722d.GUI.EnterPasswordPanel;
 import etf.openpgp.za170657d_ml170722d.security.error.AlreadyInUse;
 import etf.openpgp.za170657d_ml170722d.security.error.InvalidType;
 import etf.openpgp.za170657d_ml170722d.securityV2.KeyRing.KeyRingTags;
-import etf.openpgp.za170657d_ml170722d.securityV2.RSAUtil.KeySizeTags;
 
 public class Encryptor {
 
 	private static int BUFFER_SIZE = 1 << 12;
 
+	/**
+	 * 
+	 * @param outputFilePath     save result of encryption on path provided
+	 * @param inputFilePath      path to file that is being encrypted
+	 * @param embededFileName    original name of file being encrypted
+	 * @param publicKey          public key used to encrypt file
+	 * @param secretKey          private key used to encrypt file
+	 * @param integrityCheck     check integrity
+	 * @param radix64            save in Radix64
+	 * @param encrypt            encrypt data
+	 * @param symmetricAlgorithm algorithm tags from
+	 *                           {@link SymmetricKeyAlgorithmTags}
+	 * @param zip                ZIP encrypted data
+	 * @param sign               sign encrypted data
+	 * @throws IOException     {@link OutputStream}
+	 * @throws InvalidPassword if password provided was invalid
+	 * @throws PGPException    {@link PGPCompressedDataGenerator}
+	 */
 	public static void enctyptFile(String outputFilePath, String inputFilePath, String embededFileName,
 			PGPPublicKey publicKey, PGPSecretKey secretKey, boolean integrityCheck, boolean radix64, boolean encrypt,
 			int symmetricAlgorithm, boolean zip, boolean sign) throws Exception {
@@ -131,6 +148,24 @@ public class Encryptor {
 		}
 	}
 
+	/**
+	 * 
+	 * @param outputFilePath     save result of encryption on path provided
+	 * @param inputFilePath      path to file that is being encrypted
+	 * @param embededFileName    original name of file being encrypted
+	 * @param publicKey          list of public key used to encrypt file
+	 * @param secretKey          private key used to encrypt file
+	 * @param integrityCheck     check integrity
+	 * @param radix64            save in Radix64
+	 * @param encrypt            encrypt data
+	 * @param symmetricAlgorithm algorithm tags from
+	 *                           {@link SymmetricKeyAlgorithmTags}
+	 * @param zip                ZIP encrypted data
+	 * @param sign               sign encrypted data
+	 * @throws IOException     {@link OutputStream}.close() method
+	 * @throws InvalidPassword if password provided was invalid
+	 * @throws PGPException    {@link PGPCompressedDataGenerator}.open() method
+	 */
 	public static void enctyptFile(String outputFilePath, String inputFilePath, String embededFileName,
 			List<PGPPublicKey> publicKeys, PGPSecretKey secretKey, boolean integrityCheck, boolean radix64,
 			boolean encrypt, int symmetricAlgorithm, boolean zip, boolean sign) throws Exception {
@@ -253,11 +288,11 @@ public class Encryptor {
 			}
 			// sender
 			PGPSecretKey secretKey = KeyChain.getKeyRing(0).getSecretKey();
-  
+
 			try {
-			
+
 				/// input file name = fajl.txt
-				/// input file path  = c/temp/fajl.txt
+				/// input file path = c/temp/fajl.txt
 				/// korisink odabrao
 				Encryptor.enctyptFile(outputFileName, inputFilePath, inputFileName, list, secretKey, true, true, true,
 						SymmetricKeyAlgorithmTags.CAST5, true, true);
