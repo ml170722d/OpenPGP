@@ -17,7 +17,7 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 
-import etf.openpgp.za170657d_ml170722d.security.RSAUtil.KeySize;
+
 
 public class RSAUtil {
 

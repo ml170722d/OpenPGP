@@ -95,21 +95,22 @@ public class KeyManager {
 
 	public static void deleteKey(int index, int type) throws Exception {
 		KeyRing kr = KeyChain.getKeyRing(index);
-		kr.removeKeyRing(type);
+		//kr.removeKeyRing(type);
 		if (!kr.hasPrivateKey() && !kr.hasPublicKey())
 			KeyChain.getChain().remove(kr);
 	}
 
-	public static void deleteKey(long keyId, int type) throws InvalidType, Exception {
+	public static boolean deleteKey(long keyId, int type,char[] password) throws InvalidType, Exception {
 		KeyRing kr = KeyChain.getKeyRing(keyId);
-		kr.removeKeyRing(type);
+		boolean status = kr.removeKeyRing(type,password);
 		if (!kr.hasPrivateKey() && !kr.hasPublicKey())
 			KeyChain.getChain().remove(kr);
+		return status;
 	}
 
 	public static void deleteKey(byte[] fingerprint, int type) throws InvalidType, Exception {
 		KeyRing kr = KeyChain.getKeyRing(fingerprint);
-		kr.removeKeyRing(type);
+		///boolean status = kr.removeKeyRing(type);
 		if (!kr.hasPrivateKey() && !kr.hasPublicKey())
 			KeyChain.getChain().remove(kr);
 	}

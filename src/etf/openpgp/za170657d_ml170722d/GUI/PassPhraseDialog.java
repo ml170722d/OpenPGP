@@ -1,6 +1,11 @@
 package etf.openpgp.za170657d_ml170722d.GUI;
 
 import java.awt.BorderLayout;
+
+import etf.openpgp.za170657d_ml170722d.security.error.AlreadyInUse;
+import etf.openpgp.za170657d_ml170722d.securityV2.KeyManager;
+import etf.openpgp.za170657d_ml170722d.securityV2.RSAUtil;
+
 import java.awt.Color;
 import java.awt.FlowLayout;
 
@@ -12,16 +17,13 @@ import javax.swing.JPasswordField;
 import javax.swing.border.EmptyBorder;
 
 import org.bouncycastle.openpgp.PGPException;
-
-import etf.openpgp.za170657d_ml170722d.security.KeyManager;
-import etf.openpgp.za170657d_ml170722d.security.RSAUtil;
-
 import java.awt.Font;
 import java.awt.Toolkit;
 import javax.swing.JLabel;
 import javax.swing.JTextField;
 import java.awt.event.ActionListener;
 import java.security.GeneralSecurityException;
+import java.security.NoSuchAlgorithmException;
 import java.awt.event.ActionEvent;
 import javax.swing.SwingConstants;
 
@@ -33,7 +35,7 @@ public class PassPhraseDialog extends JDialog {
 	private MainMenuWindow mainWindow;
 
 	private String passphrase_password;
-	private String email;
+	private String userID;
 	private int keySize;
 
 	public String getPassphrase_password() {
@@ -47,9 +49,9 @@ public class PassPhraseDialog extends JDialog {
 	/**
 	 * Create the dialog.
 	 */
-	public PassPhraseDialog(MainMenuWindow mainWindow, String email, int keySize) {
+	public PassPhraseDialog(MainMenuWindow mainWindow, String userID, int keySize) {
 
-		this.email = email;
+		this.userID = userID;
 		this.keySize = keySize;
 		this.mainWindow = mainWindow;
 
@@ -124,7 +126,7 @@ public class PassPhraseDialog extends JDialog {
 						passphrase_password = temp_password;
 						// From this part of code you have passphrase password,email and keysize!!!
 
-						try {
+						/*try {
 							KeyManager km = KeyManager.getInstance();
 							switch (keySize) {
 							case 1024:
@@ -142,19 +144,17 @@ public class PassPhraseDialog extends JDialog {
 
 							default:
 								break;
-							}
+							}*/
+				
 
-							System.out.println(km.getUIUserInfo());
-
-						} catch (PGPException err) {
-							err.printStackTrace();
-						} catch (GeneralSecurityException err) {
-							err.printStackTrace();
-						} catch (Exception err) {
-							err.printStackTrace();
+						try {
+							KeyManager.generateRSAKeyPair(passphrase_password.toCharArray(), userID, keySize);
+						} catch (NoSuchAlgorithmException | PGPException | AlreadyInUse e1) {
+							// TODO Auto-generated catch block
+							e1.printStackTrace();
 						}
+			
 						mainWindow.addKeyPair();
-						mainWindow.userInfoList = KeyManager.getInstance().getUIUserInfo();
 						dispose();
 					}
 				});

@@ -18,7 +18,10 @@ import javax.swing.filechooser.FileSystemView;
 
 import org.bouncycastle.openpgp.PGPException;
 
-import etf.openpgp.za170657d_ml170722d.security.KeyManager;
+import etf.openpgp.za170657d_ml170722d.security.error.AlreadyInUse;
+import etf.openpgp.za170657d_ml170722d.securityV2.KeyChain;
+import etf.openpgp.za170657d_ml170722d.securityV2.KeyManager;
+import etf.openpgp.za170657d_ml170722d.securityV2.KeyRing;
 
 import javax.swing.JLabel;
 import java.awt.event.MouseAdapter;
@@ -43,6 +46,7 @@ import javax.swing.JTable;
 import javax.swing.border.LineBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
 import javax.swing.ListSelectionModel;
@@ -83,17 +87,10 @@ public class MainMenuWindow {
 	 */
 	public MainMenuWindow() {
 		initialize(this);
-		try {
-			KeyManager.getInstance().loadKeyRings();
-		} catch (PGPException e) {
-			e.printStackTrace();
-		}
-
+		java.security.Security.setProperty("crypto.policy", "unlimited");
+		KeyManager.init();
+		KeyManager.loadKeyChain();
 		initializeKeyPairTable();
-		userInfoList = KeyManager.getInstance().getUIUserInfo();
-//		remove key ring from key manager
-//		KeyManager.getInstance().deleteKey(ind, password);
-		
 	}
 	
 
@@ -102,12 +99,12 @@ public class MainMenuWindow {
 	 */
 	public void initializeKeyPairTable() {
 		System.out.println("Add new key pair");
-		ArrayList<UserInfo> list = (ArrayList<UserInfo>) KeyManager.getInstance().getUIUserInfo();
-
-		Iterator it = list.iterator();
+		
+		List<KeyRing> data_list =  KeyChain.getChain();
+		Iterator<KeyRing> it = data_list.iterator();
 		
 		while(it.hasNext()) {	
-		 UserInfo item = (UserInfo) it.next();
+		 KeyRing item = it.next();
 		 AddTableRow(item);
 		}
 		
@@ -118,8 +115,8 @@ public class MainMenuWindow {
 	 */
 	public void addKeyPair() {
 		
-		ArrayList<UserInfo> list = (ArrayList<UserInfo>) KeyManager.getInstance().getUIUserInfo();
-		UserInfo item = (UserInfo) list.get(list.size()-1);
+		List<KeyRing> list = KeyChain.getChain();
+		KeyRing item = (KeyRing) list.get(list.size()-1);
 		AddTableRow(item);
 		
 	}
@@ -128,26 +125,49 @@ public class MainMenuWindow {
 	 * Adds rows to the table.
 	 * @param userInfo - data for the new row
 	 */
-	private void AddTableRow(UserInfo userInfo) {
+	private void AddTableRow(KeyRing keyRing) {
 		
 		 DefaultTableModel model = (DefaultTableModel) keyPairTable.getModel();
-		 String rowData[] = new String[3];
-		 rowData[0] = userInfo.getEmail();
-		 rowData[1] = Long.toString(userInfo.getKeyId());
-		 rowData[2] = userInfo.getValidDateFrom().toString();
+		 String rowData[] = new String[5];
+		 String arrSplit[] = keyRing.getUserId().split("<");
+		 rowData[0] = arrSplit[0];
+		 rowData[1] = arrSplit[1].substring(0, arrSplit[1].length() - 1);
+		 rowData[2] = Long.toString(keyRing.getKeyId());
+		 rowData[3] = keyRing.getCreationDate().toString();
+		 
+		 if(keyRing.hasPrivateKey())
+			 rowData[4] = "PR";
+		 
+	
+		 if(keyRing.hasPublicKey())
+			 rowData[4] += " PU";
+		 
 		 model.insertRow(model.getRowCount(), rowData);
 		
 	}
 	
+	// treba da prodje kroz tabelu vidi jel ima tog kljuca i da mu dodeli onaj flag
+	//ako nema kljuca ubaci nov red  
+	
 	private void UpdateTableAfterImport() {
 		
 		DefaultTableModel model = (DefaultTableModel) keyPairTable.getModel();
-		String rowData[] = new String[3];
+		String rowData[] = new String[5];
 		
-		UserInfo userInfo = userInfoList.get(userInfoList.size()-1);
-		rowData[0] = userInfo.getEmail();
-		rowData[1] = Long.toString(userInfo.getKeyId());
-		rowData[2] = userInfo.getValidDateFrom().toString();
+		//UserInfo userInfo = userInfoList.get(userInfoList.size()-1);
+		KeyRing keyRing = KeyChain.getChain().get(KeyChain.getChain().size()-1);
+		
+		String arrSplit[] = keyRing.getUserId().split("<");
+		rowData[0] = arrSplit[0];
+		rowData[1] = arrSplit[1].substring(0, arrSplit[1].length() - 1);
+		rowData[2] = Long.toString(keyRing.getKeyId());
+		rowData[3] = keyRing.getCreationDate().toString();
+		 
+		 if(keyRing.hasPrivateKey())
+			 rowData[4] = "PR";
+	
+		 if(keyRing.hasPublicKey())
+			 rowData[4] += " PU";
 		 
 		model.insertRow(model.getRowCount(), rowData);
 		
@@ -155,17 +175,29 @@ public class MainMenuWindow {
 	
 	private void RemoveTableRow() {
 		
-		Iterator it = this.userInfoList.iterator();
+		Iterator it = KeyChain.getChain().iterator();
 		System.out.println("Remove Table row!");
 		DefaultTableModel model = (DefaultTableModel) keyPairTable.getModel();
 		
 		int i = 0;
 		while(i < keyPairTable.getRowCount()) {
 			System.out.println("Deleting the row");
-			long temp_key_Id = Long.parseLong((String)model.getValueAt(i, 1));
+			long temp_key_Id = Long.parseLong((String)model.getValueAt(i, 2));
 			if(temp_key_Id == selectedKeyId) {
-				model.removeRow(i);
-				
+	
+				KeyRing item =  KeyChain.getKeyRing(selectedKeyId);
+			
+				if(item == null) {
+					model.removeRow(i);
+					break;
+				}
+				if(item.hasPrivateKey() && !item.hasPublicKey()) {
+					model.setValueAt("PR", i, 4);
+				}
+				else if (!item.hasPrivateKey() && item.hasPublicKey()) {
+					model.setValueAt("PU", i, 4);
+				}
+						
 				break;
 			}
 	
@@ -173,6 +205,9 @@ public class MainMenuWindow {
 		}
 		
 	}
+	
+	
+	
 	
 	/**
 	 * Initialize the contents of the frame.
@@ -214,7 +249,7 @@ public class MainMenuWindow {
 	         public void windowClosing(WindowEvent e)
 	         {
 	             System.out.println("Closed");
-	             KeyManager.getInstance().storeKeyRings();
+	             KeyManager.storeKeyChain();
 	             e.getWindow().dispose();//discordapp.com/channels/@me
 	         }
 	     });
@@ -229,12 +264,20 @@ public class MainMenuWindow {
 		mntmDeleteKeyPair.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				System.out.println("Delete key");
-				KeyPairRemovalDialog dialog = new KeyPairRemovalDialog(host,host.selectedKeyIndex);
+				for(int i = 0; i < KeyChain.getChain().size();i++) {
+					System.out.println(i + " " + KeyChain.getKeyRing(i).getKeyId());
+				}
+				KeyPairRemovalDialog dialog = new KeyPairRemovalDialog(host,host.selectedKeyId);
 				dialog.setVisible(true);
 				if(dialog.isSuccess()) {
 					dialog.setSuccess(false);
 					mntmDeleteKeyPair.setEnabled(false);
-					host.RemoveTableRow();	
+					try {
+						host.RemoveTableRow();
+					} catch (Exception e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}	
 				}
 				
 			}
@@ -257,26 +300,15 @@ public class MainMenuWindow {
 				if (result == JFileChooser.APPROVE_OPTION) {
 					File selectedFile = fileChooser.getSelectedFile();
 					System.out.println("Selected file + " + selectedFile.getAbsolutePath());
-					if(selectedFile.getAbsolutePath().contains("PUBLIC")) {
-						try {
-							KeyManager.getInstance().importPublicKeyRingFromFile(selectedFile.getAbsolutePath().toString());
-						} catch (PGPException | IOException e1) {
-							// TODO Auto-generated catch block
-							e1.printStackTrace();
-						}
+					try {
+						KeyManager.importKeyRingFromFile(selectedFile.getAbsolutePath());
+						DefaultTableModel model = (DefaultTableModel) keyPairTable.getModel();
+						model.setRowCount(0);
+						initializeKeyPairTable();
+					} catch (AlreadyInUse e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
 					}
-					else if (selectedFile.getAbsolutePath().contains("PRIVATE")) {
-						
-						try {
-							KeyManager.getInstance().importSecretKeyRingFromFile(selectedFile.getCanonicalPath().toString());
-						} catch (IOException | PGPException e1) {
-							// TODO Auto-generated catch block
-							e1.printStackTrace();
-						}
-						
-					}
-					
-					userInfoList = KeyManager.getInstance().getUIUserInfo();
 					UpdateTableAfterImport();
 				}
 
@@ -310,7 +342,7 @@ public class MainMenuWindow {
 		SendMessageMenuItem.setEnabled(false);
 		SendMessageMenuItem.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				new SendMessageDialog(selectedKeyIndex).setVisible(true);
+				new SendMessageDialog(selectedKeyIndex, selectedKeyId).setVisible(true);
 			}
 		});
 		SendMessageMenuItem.setFont(new Font("Segoe UI", Font.BOLD, 18));
@@ -329,11 +361,12 @@ public class MainMenuWindow {
 		
 		
 		DefaultTableModel tabelModel = new DefaultTableModel();
-		
 		keyPairTable = new JTable(tabelModel);
+		tabelModel.addColumn("User Name");
 		tabelModel.addColumn("E-Mail");
 		tabelModel.addColumn("Key-ID");
 		tabelModel.addColumn("Valid From");
+		tabelModel.addColumn("Keys Status");
 		keyPairTable.setFont(new Font("Arial Black", Font.PLAIN, 15));
 		keyPairTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		scrollPane.setViewportView(keyPairTable);
@@ -349,27 +382,45 @@ public class MainMenuWindow {
 			public void valueChanged(ListSelectionEvent e) {
 				// TODO Auto-generated method stub
 				if(!e.getValueIsAdjusting() && keyPairTable.getSelectedRow()!=-1) {
-					String keyID = (String) keyPairTable.getValueAt(keyPairTable.getSelectedRow(), 1);
+					String keyID = (String) keyPairTable.getValueAt(keyPairTable.getSelectedRow(), 2);
 					selectedKeyId = Long.parseLong(keyID);
+					
 					mntmDeleteKeyPair.setEnabled(true);
 					ExportMenuItem.setEnabled(true);
 					SendMessageMenuItem.setEnabled(true);
 					ReciveMessageMenuItem.setEnabled(true);
 					
-					//Find index of selected key pair, by the key id;
+					
 					System.out.println("Selected");
-					Iterator it = userInfoList.iterator();
-					int index = -1;
-					while(it.hasNext()) {
+					System.out.println("Key ID " + keyID);
+					
+					
+					try {
+						KeyRing keyRing = KeyChain.getKeyRing(selectedKeyId);
 						
-						System.out.println("Search");
-						UserInfo item = (UserInfo) it.next();
-						if(item.getKeyId() == Long.parseLong(keyID)) {
-							host.selectedKeyIndex = item.getIndex();
-							System.out.println("Key ID " + keyID + " Index " + host.selectedKeyIndex);
-							break;
+						List<KeyRing> data_list =  KeyChain.getChain();
+						Iterator<KeyRing> it = data_list.iterator();
+						
+						int count = 0;
+						
+						while(it.hasNext()) {	
+						 KeyRing item = it.next();
+						 if(item.getKeyId() == selectedKeyId) {
+							 selectedKeyIndex = count;
+							 break;
+						 }
+						 count++;
 						}
+						
+						
+					} catch (Exception e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
 					}
+					
+				
+					System.out.println("Key ID " + keyID + " Index " + selectedKeyIndex);
+					
 				}
 			}
 		});

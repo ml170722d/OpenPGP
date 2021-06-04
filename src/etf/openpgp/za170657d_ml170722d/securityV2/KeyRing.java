@@ -84,6 +84,7 @@ public class KeyRing {
 		}
 	}
 
+
 	public int getAlgorithmNumber() {
 		if (publicKeyRing != null) {
 			return publicKeyRing.getPublicKey().getAlgorithm();
@@ -128,27 +129,28 @@ public class KeyRing {
 		this.secretKeyRing = secretKeyRing;
 	}
 
-	public void removeKeyRing(int type) throws Exception {
+	public boolean removeKeyRing(int type, char[] password) throws Exception {
 		switch (type) {
 		case KeyRingTags.PUBLIC:
 			this.publicKeyRing = null;
 			break;
 		case KeyRingTags.PRIVATE:
 			if (secretKeyRing == null)
-				return;
+				return false;
 
 			for (int i = 3; i > 0; i--) {
-				EnterPasswordPanel panel = new EnterPasswordPanel(i);
-				if (isPasswordForSecretKey(this.secretKeyRing.getSecretKey(), panel.getPassword())) {
+				if (isPasswordForSecretKey(this.secretKeyRing.getSecretKey(), password)) {
 					this.secretKeyRing = null;
-					return;
+					return true;
 				}
 			}
 
-			throw new Exception("Failed to inter correct password. Can't delete secter key.");
+			return false;
 		default:
 			throw new InvalidType();
 		}
+		
+		return false;
 	}
 
 	public Date getCreationDate() {

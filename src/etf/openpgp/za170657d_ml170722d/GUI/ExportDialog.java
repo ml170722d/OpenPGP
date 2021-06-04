@@ -8,13 +8,15 @@ import javax.swing.JDialog;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
-import etf.openpgp.za170657d_ml170722d.security.KeyManager;
-import etf.openpgp.za170657d_ml170722d.security.KeyManager.KeyType;
+import etf.openpgp.za170657d_ml170722d.securityV2.KeyChain;
+import etf.openpgp.za170657d_ml170722d.securityV2.KeyManager;
+import etf.openpgp.za170657d_ml170722d.securityV2.KeyRing.KeyRingTags;
 
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.security.KeyPair;
 
 import javax.swing.JLabel;
 import java.awt.Font;
@@ -83,6 +85,12 @@ public class ExportDialog extends JDialog {
 			}
 		};
 		
+		/*if(KeyChain.getKeyRing(keyId).hasPrivateKey())
+			PublicKeyButton.setSelected(true);
+		else if (KeyChain.getKeyRing(keyId).hasPrivateKey())
+			*/
+			
+	
 		PublicKeyButton.addActionListener(buttonGroupListener);
 		PrivateKeyButton.addActionListener(buttonGroupListener);
 		
@@ -99,12 +107,20 @@ public class ExportDialog extends JDialog {
 				okButton.addActionListener(new ActionListener() {
 					public void actionPerformed(ActionEvent e) {
 						if(selectedKeyType.contains("Public")) {
-							File exportFile = new File(Long.toString(keyId)+"_PUBLIC.asc");
-							KeyManager.getInstance().exportKey(keyIndex,exportFile, KeyType.PUBLIC);
+							try {
+								KeyManager.exportKey(keyId, KeyRingTags.PUBLIC, Long.toString(keyId)+ "_PUBLIC.asc");
+							} catch (Exception e1) {
+								// TODO Auto-generated catch block
+								e1.printStackTrace();
+							}			
 						}
 						else {
-							File exportFile = new File(Long.toString(keyId)+"_PRIVATE.asc");
-							KeyManager.getInstance().exportKey(keyIndex,exportFile, KeyType.PRIVATE);
+							try {
+								KeyManager.exportKey(keyId, KeyRingTags.PRIVATE, Long.toString(keyId)+ "_PRIVATE.asc");
+							} catch (Exception e1) {
+								// TODO Auto-generated catch block
+								e1.printStackTrace();
+							}
 						}
 						
 						dispose();

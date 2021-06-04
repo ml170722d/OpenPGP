@@ -253,8 +253,12 @@ public class Encryptor {
 			}
 			// sender
 			PGPSecretKey secretKey = KeyChain.getKeyRing(0).getSecretKey();
-
+  
 			try {
+			
+				/// input file name = fajl.txt
+				/// input file path  = c/temp/fajl.txt
+				/// korisink odabrao
 				Encryptor.enctyptFile(outputFileName, inputFilePath, inputFileName, list, secretKey, true, true, true,
 						SymmetricKeyAlgorithmTags.CAST5, true, true);
 			} catch (Exception e) {

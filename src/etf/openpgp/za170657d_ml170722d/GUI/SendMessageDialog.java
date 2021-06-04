@@ -14,13 +14,10 @@ import javax.swing.filechooser.FileSystemView;
 
 import org.bouncycastle.openpgp.PGPException;
 
-import etf.openpgp.za170657d_ml170722d.security.Encryptor;
-import etf.openpgp.za170657d_ml170722d.security.Encryptor.EncryptionAlg;
-import etf.openpgp.za170657d_ml170722d.security.KeyManager;
-
 import java.awt.Toolkit;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 import javax.swing.JLabel;
 import java.awt.Font;
@@ -32,6 +29,7 @@ import javax.swing.ListSelectionModel;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
+import java.security.KeyPair;
 import java.awt.event.ActionEvent;
 import javax.swing.AbstractListModel;
 import javax.swing.JComboBox;
@@ -39,6 +37,8 @@ import javax.swing.DefaultComboBoxModel;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.JTextField;
+
+import etf.openpgp.za170657d_ml170722d.securityV2.*;
 
 public class SendMessageDialog extends JDialog {
 
@@ -52,33 +52,52 @@ public class SendMessageDialog extends JDialog {
 
 	private String selectedAlg;
 	private String signKey;
-	ArrayList<String> selected_keys_list;
+	private File selectedFile;
+
+	List<String> selectedKeyList;
 	private JTextField passField;
+
 
 	/**
 	 * Launch the application.
 	 */
 
 	private void InitializeList(DefaultListModel<String> model) {
+		
+		List<KeyRing> keyPairList = KeyChain.getChain();
+		Iterator<KeyRing> it = keyPairList.iterator();
 
-		ArrayList<UserInfo> userInfoList = (ArrayList<UserInfo>) KeyManager.getInstance().getUIUserInfo();
-
-		Iterator<UserInfo> it = userInfoList.iterator();
-
-		System.out.println("User info list " + userInfoList.size());
+		System.out.println("User info list " + keyPairList.size());
 
 		while (it.hasNext()) {
-			System.out.println("Adding");
-			UserInfo item = (UserInfo) it.next();
-			model.addElement(item.getEmail());
+			KeyRing item = it.next();
+			String arrSplit[] = item.getUserId().split("<");
+			model.addElement(arrSplit[0].toString() + "-" +  arrSplit[1].substring(0, arrSplit[1].length() - 1));
+			//model.addElement(item.getUserId());
 		}
 
 	}
 
+	
+	private void encryptFile(boolean zip, boolean radix) {
+		
+		if(encryption && digital_sign) {
+			
+			if(integrity_check) {
+				
+				//if(sele)
+				
+				
+			}
+			
+		}
+		
+	}
+	
 	/**
 	 * Create the dialog.
 	 */
-	public SendMessageDialog(int index) {
+	public SendMessageDialog(int index, long keyID) {
 		setIconImage(Toolkit.getDefaultToolkit()
 				.getImage(SendMessageDialog.class.getResource("/com/sun/java/swing/plaf/windows/icons/Computer.gif")));
 		setTitle("Send Message");
@@ -120,8 +139,8 @@ public class SendMessageDialog extends JDialog {
 				if (!e.getValueIsAdjusting()) {
 
 					JList list = (JList) e.getSource();
-					selected_keys_list = (ArrayList<String>) list.getSelectedValuesList();
-					Iterator<String> it = selected_keys_list.iterator();
+					selectedKeyList = (List<String>) list.getSelectedValuesList();
+					Iterator<String> it = selectedKeyList.iterator();
 
 					while (it.hasNext()) {
 						System.out.println(it.next());
@@ -177,8 +196,7 @@ public class SendMessageDialog extends JDialog {
 						FileSystemView.getFileSystemView().getHomeDirectory());
 				int result = fileChooser.showOpenDialog(contentPanel);
 				if (result == JFileChooser.APPROVE_OPTION) {
-					File selectedFile = fileChooser.getSelectedFile();
-
+					selectedFile = fileChooser.getSelectedFile();
 					lblFileName.setText(selectedFile.getName());
 				}
 			}
@@ -221,18 +239,20 @@ public class SendMessageDialog extends JDialog {
 				JButton okButton = new JButton("OK");
 				okButton.addActionListener(new ActionListener() {
 					public void actionPerformed(ActionEvent e) {
-						// OK BUTTON CLICKED
-						System.out.println();
-						// if(
-						try {
-							int arr[] = { 0 };
-							Encryptor.encryptData(arr, "a".toCharArray(), "alfa".getBytes(), EncryptionAlg._3DES, false,
-									false, true, true, "test.pgp");
-						} catch (PGPException | IOException e1) {
-							// TODO Auto-generated catch block
-							e1.printStackTrace();
+						
+						if(radix && zip) {
+														
 						}
-
+						else if (radix && !zip) {
+							
+						}
+						else if (!radix && zip) {
+							
+						}
+						else {
+							
+						}
+						
 					}
 				});
 				okButton.setActionCommand("OK");

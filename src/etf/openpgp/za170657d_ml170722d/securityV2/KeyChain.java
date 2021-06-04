@@ -45,12 +45,12 @@ public class KeyChain {
 		throw new Exception("No key ring with given fingerprint");
 	}
 
-	public static KeyRing getKeyRing(long keyId) throws Exception {
+	public static KeyRing getKeyRing(long keyId) {
 		for (KeyRing kr : chain) {
 			if (kr.getKeyId() == keyId)
 				return kr;
 		}
-		throw new Exception("No key ring with given key id");
+		return null;
 	}
 
 	public static void removeKeyRing(long keyId) {

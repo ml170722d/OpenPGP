@@ -133,7 +133,7 @@ public class NewKeyPairDialog extends JDialog {
 							
 						}
 						else {
-							new PassPhraseDialog(mainWindow,user_email,selectedKeySize).setVisible(true);
+							new PassPhraseDialog(mainWindow,user_name + "<" + user_email + ">",selectedKeySize).setVisible(true);
 							dispose();
 						}
 					}
