@@ -1,6 +1,5 @@
 package etf.openpgp.za170657d_ml170722d.GUI;
 
-import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 
 import javax.swing.DefaultListModel;
@@ -12,26 +11,19 @@ import javax.swing.JPasswordField;
 import javax.swing.border.EmptyBorder;
 import javax.swing.filechooser.FileSystemView;
 
-import org.bouncycastle.openpgp.PGPException;
-
 import java.awt.Toolkit;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
 import javax.swing.JLabel;
 import java.awt.Font;
 import javax.swing.JCheckBox;
-import javax.swing.JTable;
 import javax.swing.JScrollPane;
 import javax.swing.JList;
 import javax.swing.ListSelectionModel;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.io.IOException;
-import java.security.KeyPair;
 import java.awt.event.ActionEvent;
-import javax.swing.AbstractListModel;
 import javax.swing.JComboBox;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.event.ListSelectionListener;
@@ -41,6 +33,11 @@ import javax.swing.JTextField;
 import etf.openpgp.za170657d_ml170722d.securityV2.*;
 
 public class SendMessageDialog extends JDialog {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 
 	private final JPanel contentPanel = new JPanel();
 
@@ -57,13 +54,12 @@ public class SendMessageDialog extends JDialog {
 	List<String> selectedKeyList;
 	private JTextField passField;
 
-
 	/**
 	 * Launch the application.
 	 */
 
 	private void InitializeList(DefaultListModel<String> model) {
-		
+
 		List<KeyRing> keyPairList = KeyChain.getChain();
 		Iterator<KeyRing> it = keyPairList.iterator();
 
@@ -72,28 +68,26 @@ public class SendMessageDialog extends JDialog {
 		while (it.hasNext()) {
 			KeyRing item = it.next();
 			String arrSplit[] = item.getUserId().split("<");
-			model.addElement(arrSplit[0].toString() + "-" +  arrSplit[1].substring(0, arrSplit[1].length() - 1));
-			//model.addElement(item.getUserId());
+			model.addElement(arrSplit[0].toString() + "-" + arrSplit[1].substring(0, arrSplit[1].length() - 1));
+			// model.addElement(item.getUserId());
 		}
 
 	}
 
-	
 	private void encryptFile(boolean zip, boolean radix) {
-		
-		if(encryption && digital_sign) {
-			
-			if(integrity_check) {
-				
-				//if(sele)
-				
-				
+
+		if (encryption && digital_sign) {
+
+			if (integrity_check) {
+
+				// if(sele)
+
 			}
-			
+
 		}
-		
+
 	}
-	
+
 	/**
 	 * Create the dialog.
 	 */
@@ -239,20 +233,17 @@ public class SendMessageDialog extends JDialog {
 				JButton okButton = new JButton("OK");
 				okButton.addActionListener(new ActionListener() {
 					public void actionPerformed(ActionEvent e) {
-						
-						if(radix && zip) {
-														
+
+						if (radix && zip) {
+
+						} else if (radix && !zip) {
+
+						} else if (!radix && zip) {
+
+						} else {
+
 						}
-						else if (radix && !zip) {
-							
-						}
-						else if (!radix && zip) {
-							
-						}
-						else {
-							
-						}
-						
+
 					}
 				});
 				okButton.setActionCommand("OK");

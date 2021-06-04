@@ -42,7 +42,7 @@ public class RSAUtil {
 		return keyPair.generateKeyPair();
 	}
 
-	public static RSAKeyGenParameterSpec generateRSAParams(KeySize bitKeySize, Provider provider)
+	public static RSAKeyGenParameterSpec generateRSAParams(int bitKeySize, Provider provider)
 			throws GeneralSecurityException {
 		AlgorithmParameterGenerator paramGen = AlgorithmParameterGenerator.getInstance("RSA", provider);
 		AlgorithmParameters params = paramGen.generateParameters();

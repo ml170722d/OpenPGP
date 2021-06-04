@@ -84,7 +84,6 @@ public class KeyRing {
 		}
 	}
 
-
 	public int getAlgorithmNumber() {
 		if (publicKeyRing != null) {
 			return publicKeyRing.getPublicKey().getAlgorithm();
@@ -113,7 +112,8 @@ public class KeyRing {
 		if (this.publicKeyRing != null)
 			throw new RuntimeException("Public key ring exists already");
 
-		if (publicKeyRing.getPublicKey().getFingerprint() != this.secretKeyRing.getPublicKey().getFingerprint())
+		if (!Arrays.equals(publicKeyRing.getPublicKey().getFingerprint(),
+				this.secretKeyRing.getPublicKey().getFingerprint()))
 			throw new RuntimeException("Tried to pair up key rings with different fingerprints");
 
 		this.publicKeyRing = publicKeyRing;
@@ -123,7 +123,8 @@ public class KeyRing {
 		if (this.secretKeyRing != null)
 			throw new RuntimeException("Secret key ring exists already");
 
-		if (secretKeyRing.getPublicKey().getFingerprint() != this.publicKeyRing.getPublicKey().getFingerprint())
+		if (!Arrays.equals(secretKeyRing.getPublicKey().getFingerprint(),
+				this.publicKeyRing.getPublicKey().getFingerprint()))
 			throw new RuntimeException("Tried to pair up key rings with different fingerprints");
 
 		this.secretKeyRing = secretKeyRing;
@@ -149,7 +150,7 @@ public class KeyRing {
 		default:
 			throw new InvalidType();
 		}
-		
+
 		return false;
 	}
 
@@ -171,19 +172,23 @@ public class KeyRing {
 	private void exportPublicKeyRing(File fileName) throws IOException {
 		assert (publicKeyRing != null);
 
-		ArmoredOutputStream privateOut = new ArmoredOutputStream(
-				new BufferedOutputStream(new FileOutputStream(fileName)));
+		BufferedOutputStream buff = new BufferedOutputStream(new FileOutputStream(fileName));
+
+		ArmoredOutputStream privateOut = new ArmoredOutputStream(buff);
 		publicKeyRing.encode(privateOut);
 		privateOut.close();
+		buff.close();
 	}
 
 	private void exportSecretKeyRing(File fileName) throws IOException {
 		assert (secretKeyRing != null);
 
-		ArmoredOutputStream privateOut = new ArmoredOutputStream(
-				new BufferedOutputStream(new FileOutputStream(fileName)));
+		BufferedOutputStream buff = new BufferedOutputStream(new FileOutputStream(fileName));
+
+		ArmoredOutputStream privateOut = new ArmoredOutputStream(buff);
 		secretKeyRing.encode(privateOut);
 		privateOut.close();
+		buff.close();
 	}
 
 	public void exportKeyRing(String filePath, String fileName, int keyType) throws InvalidType, IOException {
