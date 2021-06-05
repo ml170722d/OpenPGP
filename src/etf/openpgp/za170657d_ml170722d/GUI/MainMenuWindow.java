@@ -317,9 +317,8 @@ public class MainMenuWindow {
 						DefaultTableModel model = (DefaultTableModel) keyPairTable.getModel();
 						model.setRowCount(0);
 						keyPairTable.revalidate();
-						//initializeKeyPairTable();
+						initializeKeyPairTable();
 					} catch (AlreadyInUse e1) {
-						// TODO Auto-generated catch block
 						// Key is already loaded in application!!!
 						// No need to update table in gui
 						e1.printStackTrace();
