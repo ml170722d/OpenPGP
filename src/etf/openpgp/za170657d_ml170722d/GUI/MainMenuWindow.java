@@ -3,6 +3,7 @@ package etf.openpgp.za170657d_ml170722d.GUI;
 import java.awt.EventQueue;
 
 import javax.swing.JFrame;
+import javax.security.auth.kerberos.KerberosKey;
 import javax.swing.JDesktopPane;
 import javax.swing.JPanel;
 import java.awt.BorderLayout;
@@ -135,12 +136,16 @@ public class MainMenuWindow {
 		rowData[1] = arrSplit[1].substring(0, arrSplit[1].length() - 1);
 		rowData[2] = Long.toString(keyRing.getKeyId());
 		rowData[3] = keyRing.getCreationDate().toString();
-
-		if (keyRing.hasPrivateKey())
+		rowData[4] = "";
+		
+		if (keyRing.hasPrivateKey() && keyRing.hasPublicKey())
+			rowData[4] = "PU-PR";
+		else if(keyRing.hasPrivateKey() && !keyRing.hasPublicKey())
 			rowData[4] = "PR";
+		else if(!keyRing.hasPrivateKey() && keyRing.hasPublicKey())
+			rowData[4] = "PU";
 
-		if (keyRing.hasPublicKey())
-			rowData[4] += " PU";
+		
 
 		model.insertRow(model.getRowCount(), rowData);
 
@@ -295,10 +300,6 @@ public class MainMenuWindow {
 					System.out.println("Selected file + " + selectedFile.getAbsolutePath());
 					try {
 						KeyManager.importKeyRingFromFile(selectedFile.getAbsolutePath());
-						DefaultTableModel model = (DefaultTableModel) keyPairTable.getModel();
-						model.setRowCount(0);
-						initializeKeyPairTable();
-
 						UpdateTableAfterImport();
 					} catch (AlreadyInUse e1) {
 						// TODO Auto-generated catch block
