@@ -100,10 +100,12 @@ public class MainMenuWindow {
 	 */
 	public void initializeKeyPairTable() {
 		System.out.println("Add new key pair");
-
+		
 		List<KeyRing> data_list = KeyChain.getChain();
 		Iterator<KeyRing> it = data_list.iterator();
-
+		
+		System.out.println("Initialize " + data_list.size());
+		
 		while (it.hasNext()) {
 			KeyRing item = it.next();
 			AddTableRow(item);
@@ -144,6 +146,8 @@ public class MainMenuWindow {
 			rowData[4] = "PR";
 		else if(!keyRing.hasPrivateKey() && keyRing.hasPublicKey())
 			rowData[4] = "PU";
+		else 
+			rowData[4] = "";
 
 		
 
@@ -159,8 +163,12 @@ public class MainMenuWindow {
 		DefaultTableModel model = (DefaultTableModel) keyPairTable.getModel();
 		String rowData[] = new String[5];
 
-		// UserInfo userInfo = userInfoList.get(userInfoList.size()-1);
+
+		
 		KeyRing keyRing = KeyChain.getChain().get(KeyChain.getChain().size() - 1);
+		
+	
+		
 
 		String arrSplit[] = keyRing.getUserId().split("<");
 		rowData[0] = arrSplit[0];
@@ -168,11 +176,17 @@ public class MainMenuWindow {
 		rowData[2] = Long.toString(keyRing.getKeyId());
 		rowData[3] = keyRing.getCreationDate().toString();
 
-		if (keyRing.hasPrivateKey())
+		rowData[4] = "";
+		
+		if (keyRing.hasPrivateKey() && keyRing.hasPublicKey())
+			rowData[4] = "PU-PR";
+		else if(keyRing.hasPrivateKey() && !keyRing.hasPublicKey())
 			rowData[4] = "PR";
-
-		if (keyRing.hasPublicKey())
-			rowData[4] += " PU";
+		else if(!keyRing.hasPrivateKey() && keyRing.hasPublicKey())
+			rowData[4] = "PU";
+		else 
+			rowData[4] = "";
+		
 
 		model.insertRow(model.getRowCount(), rowData);
 
@@ -300,10 +314,12 @@ public class MainMenuWindow {
 					System.out.println("Selected file + " + selectedFile.getAbsolutePath());
 					try {
 						KeyManager.importKeyRingFromFile(selectedFile.getAbsolutePath());
-						UpdateTableAfterImport();
+						DefaultTableModel model = (DefaultTableModel) keyPairTable.getModel();
+						model.setRowCount(0);
+						keyPairTable.revalidate();
+						//initializeKeyPairTable();
 					} catch (AlreadyInUse e1) {
 						// TODO Auto-generated catch block
-						
 						// Key is already loaded in application!!!
 						// No need to update table in gui
 						e1.printStackTrace();

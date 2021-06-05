@@ -34,7 +34,7 @@ public class KeyChain {
 				if (!kr.hasPublicKey() && keyRing.hasPublicKey())
 					kr.setPublicKeyRing(keyRing.getPublicKeyRing());
 
-				break;
+				return;
 			}
 		}
 		chain.add(keyRing);
