@@ -108,7 +108,7 @@ public class ExportDialog extends JDialog {
 					public void actionPerformed(ActionEvent e) {
 						if(selectedKeyType.contains("Public")) {
 							try {
-								KeyManager.exportKey(keyId, KeyRingTags.PUBLIC, Long.toString(keyId)+ "_PUBLIC.asc");
+								KeyManager.exportKey(keyId, KeyRingTags.PUBLIC, Long.toString(keyId)+ "_PUBLIC");
 							} catch (Exception e1) {
 								// TODO Auto-generated catch block
 								e1.printStackTrace();
@@ -116,7 +116,7 @@ public class ExportDialog extends JDialog {
 						}
 						else {
 							try {
-								KeyManager.exportKey(keyId, KeyRingTags.PRIVATE, Long.toString(keyId)+ "_PRIVATE.asc");
+								KeyManager.exportKey(keyId, KeyRingTags.PRIVATE, Long.toString(keyId)+ "_PRIVATE");
 							} catch (Exception e1) {
 								// TODO Auto-generated catch block
 								e1.printStackTrace();

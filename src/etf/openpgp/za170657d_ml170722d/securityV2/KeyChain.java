@@ -25,13 +25,16 @@ public class KeyChain {
 	public static void add(KeyRing keyRing) throws AlreadyInUse {
 		for (KeyRing kr : chain) {
 			if (kr.getKeyId() == keyRing.getKeyId()) {
+				if (kr.hasPrivateKey() && kr.hasPublicKey())
+					throw new AlreadyInUse();
+
 				if (!kr.hasPrivateKey() && keyRing.hasPrivateKey())
 					kr.setSecretKeyRing(keyRing.getSecretKeyRing());
 
 				if (!kr.hasPublicKey() && keyRing.hasPublicKey())
 					kr.setPublicKeyRing(keyRing.getPublicKeyRing());
 
-				throw new AlreadyInUse();
+				break;
 			}
 		}
 		chain.add(keyRing);
