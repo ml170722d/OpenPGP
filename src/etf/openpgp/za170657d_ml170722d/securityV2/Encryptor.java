@@ -170,13 +170,13 @@ public class Encryptor {
 			List<PGPPublicKey> publicKeys, PGPSecretKey secretKey, boolean integrityCheck, boolean radix64,
 			boolean encrypt, int symmetricAlgorithm, boolean zip, boolean sign) throws Exception {
 
-//		String embededFileName = "embeded";
+		outputFilePath = outputFilePath + "/" + embededFileName + "_enc" + ".gpg";
 
 		InputStream in = new FileInputStream(inputFilePath);
-		OutputStream out = new BufferedOutputStream(new FileOutputStream(outputFilePath));
-
+		OutputStream outB = new BufferedOutputStream(new FileOutputStream(outputFilePath));
+		ArmoredOutputStream out = null;
 		if (radix64)
-			out = new ArmoredOutputStream(out);
+			out = new ArmoredOutputStream(outB);
 
 		PGPPrivateKey privateKey = null;
 
@@ -195,7 +195,7 @@ public class Encryptor {
 
 			if (privateKey == null) {
 				in.close();
-				out.close();
+				outB.close();
 				throw new Exception("Invalid password. Cand't get private key");
 			}
 
@@ -212,16 +212,18 @@ public class Encryptor {
 					encryptedDataGenerator.addMethod(new BcPublicKeyKeyEncryptionMethodGenerator(publicKey));
 
 				if (zip) {
-					cOut = new PGPCompressedDataGenerator(PGPCompressedData.ZIP)
-							.open(encryptedDataGenerator.open(out, new byte[BUFFER_SIZE]), new byte[BUFFER_SIZE]);
+					cOut = new PGPCompressedDataGenerator(PGPCompressedData.ZIP).open(
+							encryptedDataGenerator.open(out == null ? outB : out, new byte[BUFFER_SIZE]),
+							new byte[BUFFER_SIZE]);
 				} else {
-					cOut = encryptedDataGenerator.open(out, new byte[BUFFER_SIZE]);
+					cOut = encryptedDataGenerator.open(out == null ? outB : out, new byte[BUFFER_SIZE]);
 				}
 			} else {
 				if (zip) {
-					cOut = new PGPCompressedDataGenerator(PGPCompressedData.ZIP).open(out, new byte[BUFFER_SIZE]);
+					cOut = new PGPCompressedDataGenerator(PGPCompressedData.ZIP).open(out == null ? outB : out,
+							new byte[BUFFER_SIZE]);
 				} else {
-					cOut = out;
+					cOut = out == null ? outB : out;
 				}
 			}
 
@@ -255,7 +257,10 @@ public class Encryptor {
 			if (encrypt)
 				encryptedDataGenerator.close();
 
-			out.close();
+			if (out != null)
+				out.close();
+			else
+				outB.close();
 		}
 	}
 

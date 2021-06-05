@@ -350,7 +350,6 @@ public class MainMenuWindow {
 
 		// SEND MESSAGE
 		JMenuItem SendMessageMenuItem = new JMenuItem("Send Message");
-		SendMessageMenuItem.setEnabled(false);
 		SendMessageMenuItem.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				new SendMessageDialog(selectedKeyIndex, selectedKeyId).setVisible(true);
@@ -360,7 +359,6 @@ public class MainMenuWindow {
 		mnNewMenu.add(SendMessageMenuItem);
 
 		JMenuItem ReciveMessageMenuItem = new JMenuItem("Recive Message");
-		ReciveMessageMenuItem.setEnabled(false);
 		ReciveMessageMenuItem.setFont(new Font("Segoe UI", Font.BOLD, 18));
 		mnNewMenu.add(ReciveMessageMenuItem);
 		frmOpenPgp.getContentPane().setLayout(null);
@@ -393,8 +391,7 @@ public class MainMenuWindow {
 
 					mntmDeleteKeyPair.setEnabled(true);
 					ExportMenuItem.setEnabled(true);
-					SendMessageMenuItem.setEnabled(true);
-					ReciveMessageMenuItem.setEnabled(true);
+				
 
 					System.out.println("Selected");
 					System.out.println("Key ID " + keyID);

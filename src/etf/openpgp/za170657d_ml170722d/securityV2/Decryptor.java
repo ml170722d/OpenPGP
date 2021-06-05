@@ -85,7 +85,6 @@ public class Decryptor {
 					}
 				}
 
-			} catch (NoSuchProviderException e) {
 			} catch (PGPException e) {
 				e.printStackTrace();
 				bIn.close();
@@ -222,6 +221,8 @@ public class Decryptor {
 		fOut.close();
 
 //		throw new Success("Successful decryption");
+		
+		///OutFilePath dir gde cuvamo fajl dobijen dekripcijom
 	}
 
 	public static void main(String[] args) throws Exception {
