@@ -32,121 +32,13 @@ import org.bouncycastle.openpgp.operator.bc.BcPublicKeyKeyEncryptionMethodGenera
 
 import etf.openpgp.za170657d_ml170722d.GUI.EnterPasswordPanel;
 import etf.openpgp.za170657d_ml170722d.security.error.AlreadyInUse;
+import etf.openpgp.za170657d_ml170722d.security.error.InvalidPassword;
 import etf.openpgp.za170657d_ml170722d.security.error.InvalidType;
 import etf.openpgp.za170657d_ml170722d.securityV2.KeyRing.KeyRingTags;
 
 public class Encryptor {
 
 	private static int BUFFER_SIZE = 1 << 12;
-
-	/**
-	 * 
-	 * @param outputFilePath     save result of encryption on path provided
-	 * @param inputFilePath      path to file that is being encrypted
-	 * @param embededFileName    original name of file being encrypted
-	 * @param publicKey          public key used to encrypt file
-	 * @param secretKey          private key used to encrypt file
-	 * @param integrityCheck     check integrity
-	 * @param radix64            save in Radix64
-	 * @param encrypt            encrypt data
-	 * @param symmetricAlgorithm algorithm tags from
-	 *                           {@link SymmetricKeyAlgorithmTags}
-	 * @param zip                ZIP encrypted data
-	 * @param sign               sign encrypted data
-	 * @throws IOException     {@link OutputStream}
-	 * @throws InvalidPassword if password provided was invalid
-	 * @throws PGPException    {@link PGPCompressedDataGenerator}
-	 */
-	public static void enctyptFile(String outputFilePath, String inputFilePath, String embededFileName,
-			PGPPublicKey publicKey, PGPSecretKey secretKey, boolean integrityCheck, boolean radix64, boolean encrypt,
-			int symmetricAlgorithm, boolean zip, boolean sign) throws Exception {
-
-//		String embededFileName = "embeded";
-
-		InputStream in = new FileInputStream(inputFilePath);
-		OutputStream out = new BufferedOutputStream(new FileOutputStream(outputFilePath));
-
-		if (radix64)
-			out = new ArmoredOutputStream(out);
-
-		PGPPrivateKey privateKey = null;
-
-		if (sign) {
-			for (int i = 3; i > 0; i--) {
-				try {
-					EnterPasswordPanel panel = new EnterPasswordPanel(i);
-					char[] pass = panel.getPassword();
-					if (KeyRing.isPasswordForSecretKey(secretKey, pass)) {
-						privateKey = KeyRing.getPrivateKeyFromSecretKey(secretKey, pass);
-						break;
-					}
-				} catch (PGPException e) {
-				}
-			}
-
-			if (privateKey == null) {
-				in.close();
-				out.close();
-				throw new Exception("Invalid password. Cand't get private key");
-			}
-
-			SecureRandom rand = new SecureRandom();
-
-			OutputStream cOut;
-			PGPEncryptedDataGenerator encryptedDataGenerator = null;
-
-			if (encrypt) {
-				encryptedDataGenerator = new PGPEncryptedDataGenerator(new BcPGPDataEncryptorBuilder(symmetricAlgorithm)
-						.setWithIntegrityPacket(integrityCheck).setSecureRandom(rand));
-				encryptedDataGenerator.addMethod(new BcPublicKeyKeyEncryptionMethodGenerator(publicKey));
-
-				if (zip) {
-					cOut = new PGPCompressedDataGenerator(PGPCompressedData.ZIP)
-							.open(encryptedDataGenerator.open(out, new byte[BUFFER_SIZE]), new byte[BUFFER_SIZE]);
-				} else {
-					cOut = encryptedDataGenerator.open(out, new byte[BUFFER_SIZE]);
-				}
-			} else {
-				if (zip) {
-					cOut = new PGPCompressedDataGenerator(PGPCompressedData.ZIP).open(out, new byte[BUFFER_SIZE]);
-				} else {
-					cOut = out;
-				}
-			}
-
-			PGPSignatureGenerator signatureGenerator = null;
-
-			if (sign) {
-				signatureGenerator = new PGPSignatureGenerator(new BcPGPContentSignerBuilder(
-						privateKey.getPublicKeyPacket().getAlgorithm(), HashAlgorithmTags.SHA1));
-				signatureGenerator.init(PGPSignature.BINARY_DOCUMENT, privateKey);
-				signatureGenerator.generateOnePassVersion(true).encode(cOut);
-			}
-
-			OutputStream finalOut = new PGPLiteralDataGenerator().open(cOut, PGPLiteralData.BINARY, embededFileName,
-					new Date(), new byte[BUFFER_SIZE]);
-
-			byte[] buff = new byte[BUFFER_SIZE];
-			int len;
-			while ((len = in.read(buff)) > 0) {
-				finalOut.write(buff, 0, len);
-				if (sign) {
-					signatureGenerator.update(buff, 0, len);
-				}
-			}
-
-			finalOut.close();
-			in.close();
-			if (sign)
-				signatureGenerator.generate().encode(cOut);
-
-			cOut.close();
-			if (encrypt)
-				encryptedDataGenerator.close();
-
-			out.close();
-		}
-	}
 
 	/**
 	 * 
@@ -170,7 +62,7 @@ public class Encryptor {
 			List<PGPPublicKey> publicKeys, PGPSecretKey secretKey, boolean integrityCheck, boolean radix64,
 			boolean encrypt, int symmetricAlgorithm, boolean zip, boolean sign) throws Exception {
 
-		outputFilePath = outputFilePath + "/" + embededFileName + "_enc" + ".gpg";
+		outputFilePath = outputFilePath + "/" + embededFileName + ".gpg";
 
 		InputStream in = new FileInputStream(inputFilePath);
 		OutputStream outB = new BufferedOutputStream(new FileOutputStream(outputFilePath));
@@ -196,7 +88,7 @@ public class Encryptor {
 			if (privateKey == null) {
 				in.close();
 				outB.close();
-				throw new Exception("Invalid password. Cand't get private key");
+				throw new InvalidPassword("Invalid password. Cand't get private key");
 			}
 
 			SecureRandom rand = new SecureRandom();
@@ -259,12 +151,12 @@ public class Encryptor {
 
 			if (out != null)
 				out.close();
-			else
-				outB.close();
+
+			outB.close();
 		}
 	}
 
-	public static void main(String[] args)
+	public static void main_(String[] args)
 			throws NoSuchAlgorithmException, PGPException, AlreadyInUse, InvalidType, IOException {
 
 		java.security.Security.setProperty("crypto.policy", "unlimited");
@@ -296,9 +188,6 @@ public class Encryptor {
 
 			try {
 
-				/// input file name = fajl.txt
-				/// input file path = c/temp/fajl.txt
-				/// korisink odabrao
 				Encryptor.enctyptFile(outputFileName, inputFilePath, inputFileName, list, secretKey, true, true, true,
 						SymmetricKeyAlgorithmTags.CAST5, true, true);
 			} catch (Exception e) {
