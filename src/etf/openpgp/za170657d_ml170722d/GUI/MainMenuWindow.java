@@ -3,53 +3,32 @@ package etf.openpgp.za170657d_ml170722d.GUI;
 import java.awt.EventQueue;
 
 import javax.swing.JFrame;
-import javax.security.auth.kerberos.KerberosKey;
-import javax.swing.JDesktopPane;
-import javax.swing.JPanel;
-import java.awt.BorderLayout;
 import javax.swing.JMenuBar;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import java.awt.Font;
 import java.awt.Color;
 import java.awt.Toolkit;
-import javax.swing.JDialog;
 import javax.swing.JFileChooser;
-import javax.swing.filechooser.FileSystemView;
-
-import org.bouncycastle.openpgp.PGPException;
 
 import etf.openpgp.za170657d_ml170722d.security.error.AlreadyInUse;
 import etf.openpgp.za170657d_ml170722d.securityV2.KeyChain;
 import etf.openpgp.za170657d_ml170722d.securityV2.KeyManager;
 import etf.openpgp.za170657d_ml170722d.securityV2.KeyRing;
 
-import javax.swing.JLabel;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import javax.swing.JScrollPane;
-import java.awt.GridLayout;
-import java.awt.RenderingHints.Key;
 
 import javax.swing.JTable;
-import javax.swing.border.LineBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableModel;
 import javax.swing.ListSelectionModel;
 
 public class MainMenuWindow {
@@ -70,7 +49,7 @@ public class MainMenuWindow {
 	/**
 	 * Launch the application.
 	 */
-	public static void main(String[] args) {
+	public static void main_(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
@@ -100,12 +79,12 @@ public class MainMenuWindow {
 	 */
 	public void initializeKeyPairTable() {
 		System.out.println("Add new key pair");
-		
+
 		List<KeyRing> data_list = KeyChain.getChain();
 		Iterator<KeyRing> it = data_list.iterator();
-		
+
 		System.out.println("Initialize " + data_list.size());
-		
+
 		while (it.hasNext()) {
 			KeyRing item = it.next();
 			AddTableRow(item);
@@ -139,17 +118,15 @@ public class MainMenuWindow {
 		rowData[2] = Long.toString(keyRing.getKeyId());
 		rowData[3] = keyRing.getCreationDate().toString();
 		rowData[4] = "";
-		
+
 		if (keyRing.hasPrivateKey() && keyRing.hasPublicKey())
 			rowData[4] = "PU-PR";
-		else if(keyRing.hasPrivateKey() && !keyRing.hasPublicKey())
+		else if (keyRing.hasPrivateKey() && !keyRing.hasPublicKey())
 			rowData[4] = "PR";
-		else if(!keyRing.hasPrivateKey() && keyRing.hasPublicKey())
+		else if (!keyRing.hasPrivateKey() && keyRing.hasPublicKey())
 			rowData[4] = "PU";
-		else 
+		else
 			rowData[4] = "";
-
-		
 
 		model.insertRow(model.getRowCount(), rowData);
 
@@ -163,12 +140,7 @@ public class MainMenuWindow {
 		DefaultTableModel model = (DefaultTableModel) keyPairTable.getModel();
 		String rowData[] = new String[5];
 
-
-		
 		KeyRing keyRing = KeyChain.getChain().get(KeyChain.getChain().size() - 1);
-		
-	
-		
 
 		String arrSplit[] = keyRing.getUserId().split("<");
 		rowData[0] = arrSplit[0];
@@ -177,16 +149,15 @@ public class MainMenuWindow {
 		rowData[3] = keyRing.getCreationDate().toString();
 
 		rowData[4] = "";
-		
+
 		if (keyRing.hasPrivateKey() && keyRing.hasPublicKey())
 			rowData[4] = "PU-PR";
-		else if(keyRing.hasPrivateKey() && !keyRing.hasPublicKey())
+		else if (keyRing.hasPrivateKey() && !keyRing.hasPublicKey())
 			rowData[4] = "PR";
-		else if(!keyRing.hasPrivateKey() && keyRing.hasPublicKey())
+		else if (!keyRing.hasPrivateKey() && keyRing.hasPublicKey())
 			rowData[4] = "PU";
-		else 
+		else
 			rowData[4] = "";
-		
 
 		model.insertRow(model.getRowCount(), rowData);
 
@@ -194,7 +165,7 @@ public class MainMenuWindow {
 
 	private void RemoveTableRow() {
 
-		Iterator it = KeyChain.getChain().iterator();
+		Iterator<KeyRing> it = KeyChain.getChain().iterator();
 		System.out.println("Remove Table row!");
 		DefaultTableModel model = (DefaultTableModel) keyPairTable.getModel();
 
@@ -391,7 +362,6 @@ public class MainMenuWindow {
 
 					mntmDeleteKeyPair.setEnabled(true);
 					ExportMenuItem.setEnabled(true);
-				
 
 					System.out.println("Selected");
 					System.out.println("Key ID " + keyID);

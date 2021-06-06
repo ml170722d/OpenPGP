@@ -95,14 +95,14 @@ public class KeyManager {
 
 	public static void deleteKey(int index, int type) throws Exception {
 		KeyRing kr = KeyChain.getKeyRing(index);
-		//kr.removeKeyRing(type);
+		// kr.removeKeyRing(type);
 		if (!kr.hasPrivateKey() && !kr.hasPublicKey())
 			KeyChain.getChain().remove(kr);
 	}
 
-	public static boolean deleteKey(long keyId, int type,char[] password) throws InvalidType, Exception {
+	public static boolean deleteKey(long keyId, int type, char[] password) throws InvalidType, Exception {
 		KeyRing kr = KeyChain.getKeyRing(keyId);
-		boolean status = kr.removeKeyRing(type,password);
+		boolean status = kr.removeKeyRing(type, password);
 		if (!kr.hasPrivateKey() && !kr.hasPublicKey())
 			KeyChain.getChain().remove(kr);
 		return status;
@@ -110,7 +110,7 @@ public class KeyManager {
 
 	public static void deleteKey(byte[] fingerprint, int type) throws InvalidType, Exception {
 		KeyRing kr = KeyChain.getKeyRing(fingerprint);
-		///boolean status = kr.removeKeyRing(type);
+		/// boolean status = kr.removeKeyRing(type);
 		if (!kr.hasPrivateKey() && !kr.hasPublicKey())
 			KeyChain.getChain().remove(kr);
 	}
@@ -214,7 +214,7 @@ public class KeyManager {
 		KeyChain.add(kr);
 	}
 
-	public static void main(String[] args) throws Exception {
+	public static void main_(String[] args) throws Exception {
 		java.security.Security.setProperty("crypto.policy", "unlimited");
 		KeyManager.init();
 		{

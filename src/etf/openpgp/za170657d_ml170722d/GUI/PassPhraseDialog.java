@@ -4,14 +4,12 @@ import java.awt.BorderLayout;
 
 import etf.openpgp.za170657d_ml170722d.security.error.AlreadyInUse;
 import etf.openpgp.za170657d_ml170722d.securityV2.KeyManager;
-import etf.openpgp.za170657d_ml170722d.securityV2.RSAUtil;
 
 import java.awt.Color;
 import java.awt.FlowLayout;
 
 import javax.swing.JButton;
 import javax.swing.JDialog;
-import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.border.EmptyBorder;
@@ -22,13 +20,16 @@ import java.awt.Toolkit;
 import javax.swing.JLabel;
 import javax.swing.JTextField;
 import java.awt.event.ActionListener;
-import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.awt.event.ActionEvent;
 import javax.swing.SwingConstants;
 
 public class PassPhraseDialog extends JDialog {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	private final JPanel contentPanel = new JPanel();
 	private JTextField PasswordTextField;
 	private JTextField RepeatTextField;
@@ -126,26 +127,17 @@ public class PassPhraseDialog extends JDialog {
 						passphrase_password = temp_password;
 						// From this part of code you have passphrase password,email and keysize!!!
 
-						/*try {
-							KeyManager km = KeyManager.getInstance();
-							switch (keySize) {
-							case 1024:
-								km.generateRSAKeyPairEncryption(passphrase_password.toCharArray(), email,
-										RSAUtil.KeySize._1024b, RSAUtil.KeySize._1024b);
-								break;
-							case 2048:
-								km.generateRSAKeyPairEncryption(passphrase_password.toCharArray(), email,
-										RSAUtil.KeySize._2048b, RSAUtil.KeySize._2048b);
-								break;
-							case 4096:
-								km.generateRSAKeyPairEncryption(passphrase_password.toCharArray(), email,
-										RSAUtil.KeySize._4096b, RSAUtil.KeySize._4096b);
-								break;
-
-							default:
-								break;
-							}*/
-				
+						/*
+						 * try { KeyManager km = KeyManager.getInstance(); switch (keySize) { case 1024:
+						 * km.generateRSAKeyPairEncryption(passphrase_password.toCharArray(), email,
+						 * RSAUtil.KeySize._1024b, RSAUtil.KeySize._1024b); break; case 2048:
+						 * km.generateRSAKeyPairEncryption(passphrase_password.toCharArray(), email,
+						 * RSAUtil.KeySize._2048b, RSAUtil.KeySize._2048b); break; case 4096:
+						 * km.generateRSAKeyPairEncryption(passphrase_password.toCharArray(), email,
+						 * RSAUtil.KeySize._4096b, RSAUtil.KeySize._4096b); break;
+						 * 
+						 * default: break; }
+						 */
 
 						try {
 							KeyManager.generateRSAKeyPair(passphrase_password.toCharArray(), userID, keySize);
@@ -153,7 +145,7 @@ public class PassPhraseDialog extends JDialog {
 							// TODO Auto-generated catch block
 							e1.printStackTrace();
 						}
-			
+
 						mainWindow.addKeyPair();
 						dispose();
 					}
