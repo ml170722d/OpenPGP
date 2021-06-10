@@ -11,7 +11,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.security.NoSuchProviderException;
 import java.util.Arrays;
 import java.util.Iterator;
 
@@ -220,12 +219,9 @@ public class Decryptor {
 		fOut.flush();
 		fOut.close();
 
-//		throw new Success("Successful decryption");
-		
-		///OutFilePath dir gde cuvamo fajl dobijen dekripcijom
 	}
 
-	public static void main(String[] args) throws Exception {
+	public static void main_(String[] args) throws Exception {
 		java.security.Security.setProperty("crypto.policy", "unlimited");
 		KeyManager.init();
 		{

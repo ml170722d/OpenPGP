@@ -7,11 +7,9 @@ import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JPanel;
-import javax.swing.JPasswordField;
 import javax.swing.border.EmptyBorder;
 import javax.swing.filechooser.FileSystemView;
 
-import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPPublicKey;
 
 import java.awt.Toolkit;
@@ -28,13 +26,11 @@ import javax.swing.JList;
 import javax.swing.ListSelectionModel;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.security.KeyPair;
 import java.awt.event.ActionEvent;
 import javax.swing.JComboBox;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.ListSelectionEvent;
-import javax.swing.JTextField;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 
 import etf.openpgp.za170657d_ml170722d.securityV2.*;
@@ -56,8 +52,7 @@ public class SendMessageDialog extends JDialog {
 	private File selectedFile;
 
 	ArrayList<PGPPublicKey> selectedKeyList = new ArrayList<PGPPublicKey>();
-	private HashMap <String, Long> mapUserID_KeyID = new HashMap <String, Long>();
-	
+	private HashMap<String, Long> mapUserID_KeyID = new HashMap<String, Long>();
 
 	private void InitializeList(DefaultListModel<String> model) {
 
@@ -70,10 +65,12 @@ public class SendMessageDialog extends JDialog {
 			KeyRing item = it.next();
 			String arrSplit[] = item.getUserId().split("<");
 			model.addElement(arrSplit[0].toString() + "-" + arrSplit[1].substring(0, arrSplit[1].length() - 1));
-			mapUserID_KeyID.put(arrSplit[0].toString() + "-" + arrSplit[1].substring(0, arrSplit[1].length() - 1), item.getKeyId());
+			mapUserID_KeyID.put(arrSplit[0].toString() + "-" + arrSplit[1].substring(0, arrSplit[1].length() - 1),
+					item.getKeyId());
 		}
 
 	}
+
 	public SendMessageDialog(int index, long keyID) {
 		setIconImage(Toolkit.getDefaultToolkit()
 				.getImage(SendMessageDialog.class.getResource("/com/sun/java/swing/plaf/windows/icons/Computer.gif")));
@@ -116,13 +113,13 @@ public class SendMessageDialog extends JDialog {
 				if (!e.getValueIsAdjusting()) {
 
 					JList list = (JList) e.getSource();
-					
+
 					List<String> str_list = list.getSelectedValuesList();
-				
+
 					selectedKeyList.clear();
 					Iterator<String> it = str_list.iterator();
-			
-					while(it.hasNext()) {
+
+					while (it.hasNext()) {
 						selectedKeyList.add(KeyChain.getKeyRing(mapUserID_KeyID.get(it.next())).getPublicKey());
 					}
 				}
@@ -177,9 +174,10 @@ public class SendMessageDialog extends JDialog {
 				if (result == JFileChooser.APPROVE_OPTION) {
 					selectedFile = fileChooser.getSelectedFile();
 					lblFileName.setText(selectedFile.getName());
-					
-					System.out.println("Abs file path " + selectedFile.getAbsolutePath() + " file  get name" + selectedFile.getName());
-					
+
+					System.out.println("Abs file path " + selectedFile.getAbsolutePath() + " file  get name"
+							+ selectedFile.getName());
+
 				}
 			}
 		});
@@ -206,12 +204,12 @@ public class SendMessageDialog extends JDialog {
 		chckbxIntegrity.setFont(new Font("Tahoma", Font.PLAIN, 16));
 		chckbxIntegrity.setBounds(150, 113, 141, 25);
 		contentPanel.add(chckbxIntegrity);
-		
+
 		JLabel lblNewLabel_1 = new JLabel("SENDER  : ");
 		lblNewLabel_1.setFont(new Font("Tahoma", Font.BOLD, 15));
 		lblNewLabel_1.setBounds(205, 187, 86, 40);
 		contentPanel.add(lblNewLabel_1);
-		
+
 		JLabel lblNewLabel_2 = new JLabel("RECIVER/S  : ");
 		lblNewLabel_2.setFont(new Font("Tahoma", Font.BOLD, 15));
 		lblNewLabel_2.setBounds(415, 113, 104, 25);
@@ -227,27 +225,28 @@ public class SendMessageDialog extends JDialog {
 				okButton.addActionListener(new ActionListener() {
 					public void actionPerformed(ActionEvent e) {
 
-						if(selectedAlg.contains("3DES")) {
+						if (selectedAlg.contains("3DES")) {
 							try {
-								Encryptor.enctyptFile(new File("").getAbsolutePath(),selectedFile.getAbsolutePath(),selectedFile.getName(), selectedKeyList, signKey.getSecretKey(), 
-										integrity_check, radix, encryption, SymmetricKeyAlgorithmTags.TRIPLE_DES, zip, digital_sign);
+								Encryptor.enctyptFile(new File("").getAbsolutePath(), selectedFile.getAbsolutePath(),
+										selectedFile.getName(), selectedKeyList, signKey.getSecretKey(),
+										integrity_check, radix, encryption, SymmetricKeyAlgorithmTags.TRIPLE_DES, zip,
+										digital_sign);
 							} catch (Exception e1) {
-								// TODO Auto-generated catch block
 								e1.printStackTrace();
 							}
-						}
-						else if (selectedAlg.contains("CAST5")) {
+						} else if (selectedAlg.contains("CAST5")) {
 							try {
-								Encryptor.enctyptFile(new File("").getAbsolutePath(),selectedFile.getAbsolutePath(),selectedFile.getName(), selectedKeyList, signKey.getSecretKey(), 
-										integrity_check, radix, encryption, SymmetricKeyAlgorithmTags.CAST5, zip, digital_sign);
+								Encryptor.enctyptFile(new File("").getAbsolutePath(), selectedFile.getAbsolutePath(),
+										selectedFile.getName(), selectedKeyList, signKey.getSecretKey(),
+										integrity_check, radix, encryption, SymmetricKeyAlgorithmTags.CAST5, zip,
+										digital_sign);
 							} catch (Exception e1) {
-								// TODO Auto-generated catch block
 								e1.printStackTrace();
 							}
 						}
 						dispose();
 					}
-				
+
 				});
 				okButton.setActionCommand("OK");
 				buttonPane.add(okButton);
