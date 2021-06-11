@@ -8,13 +8,18 @@ import javax.swing.JDialog;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
+import etf.openpgp.za170657d_ml170722d.security.error.InvalidType;
 import etf.openpgp.za170657d_ml170722d.securityV2.KeyManager;
 import etf.openpgp.za170657d_ml170722d.securityV2.KeyRing.KeyRingTags;
 
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.IOException;
+
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+
 import java.awt.Font;
 
 import javax.swing.AbstractButton;
@@ -117,6 +122,14 @@ public class ExportDialog extends JDialog {
 						} else {
 							try {
 								KeyManager.exportKey(keyId, KeyRingTags.PRIVATE, Long.toString(keyId) + "_PRIVATE");
+							} catch (NullPointerException e1) {
+								// TODO Auto-generated catch block
+							} catch (InvalidType e1) {
+								// TODO Auto-generated catch block
+								e1.printStackTrace();
+							} catch (IOException e1) {
+								// TODO Auto-generated catch block
+								e1.printStackTrace();
 							} catch (Exception e1) {
 								// TODO Auto-generated catch block
 								e1.printStackTrace();

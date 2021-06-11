@@ -6,6 +6,8 @@ import javax.swing.JFrame;
 import javax.swing.JMenuBar;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
+
 import java.awt.Font;
 import java.awt.Color;
 import java.awt.Toolkit;
@@ -290,9 +292,8 @@ public class MainMenuWindow {
 						keyPairTable.revalidate();
 						initializeKeyPairTable();
 					} catch (AlreadyInUse e1) {
-						// Key is already loaded in application!!!
-						// No need to update table in gui
-						e1.printStackTrace();
+						JOptionPane.showMessageDialog(frmOpenPgp, "Key already in the table!","Open PGP Info",1);
+						//e1.printStackTrace();
 					}
 				}
 
@@ -330,6 +331,12 @@ public class MainMenuWindow {
 		mnNewMenu.add(SendMessageMenuItem);
 
 		JMenuItem ReciveMessageMenuItem = new JMenuItem("Recive Message");
+		ReciveMessageMenuItem.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				ReciveMessageDialog dialog = new ReciveMessageDialog();
+				dialog.setVisible(true);
+			}
+		});
 		ReciveMessageMenuItem.setFont(new Font("Segoe UI", Font.BOLD, 18));
 		mnNewMenu.add(ReciveMessageMenuItem);
 		frmOpenPgp.getContentPane().setLayout(null);

@@ -14,6 +14,7 @@ import java.awt.Color;
 import javax.swing.JComboBox;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.Toolkit;
 
 public class NewKeyPairDialog extends JDialog {
 
@@ -47,6 +48,7 @@ public class NewKeyPairDialog extends JDialog {
 	 * Create the dialog.
 	 */
 	public NewKeyPairDialog(MainMenuWindow mainWindow) {
+		setIconImage(Toolkit.getDefaultToolkit().getImage(NewKeyPairDialog.class.getResource("/javax/swing/plaf/metal/icons/ocean/collapsed.gif")));
 
 		this.mainWindow = mainWindow;
 
