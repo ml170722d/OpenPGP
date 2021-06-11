@@ -333,7 +333,7 @@ public class MainMenuWindow {
 		JMenuItem ReciveMessageMenuItem = new JMenuItem("Recive Message");
 		ReciveMessageMenuItem.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				ReciveMessageDialog dialog = new ReciveMessageDialog();
+				ReceiveMessageDialog dialog = new ReceiveMessageDialog();
 				dialog.setVisible(true);
 			}
 		});
