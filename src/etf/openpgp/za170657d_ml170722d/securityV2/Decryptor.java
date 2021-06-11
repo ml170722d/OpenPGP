@@ -39,7 +39,35 @@ import etf.openpgp.za170657d_ml170722d.GUI.EnterPasswordPanel;
 
 public class Decryptor {
 
-	public static void dectyprFile(String inputFilePath, String outputFilePath) throws Exception {
+	public static class Info {
+		private boolean encrypted;
+		private boolean signed;
+		private long id;
+
+		public boolean isEncrypted() {
+			return encrypted;
+		}
+
+		public boolean isSigned() {
+			return signed;
+		}
+
+		public long getId() {
+			return id;
+		}
+
+		public void setEncrypted(boolean encrypted) {
+			this.encrypted = encrypted;
+		}
+
+		public Info(boolean enc, boolean sign, long id) {
+			encrypted = enc;
+			signed = sign;
+			this.id = id;
+		}
+	}
+
+	public static Info dectyprFile(String inputFilePath, String outputFilePath) throws Exception {
 
 		byte[] read = readEncryptedDataFromFile(inputFilePath);
 		InputStream bIn = new ByteArrayInputStream(read);
@@ -52,14 +80,16 @@ public class Decryptor {
 
 		if (pgpObj instanceof PGPOnePassSignatureList || pgpObj instanceof PGPCompressedData
 				|| pgpObj instanceof PGPLiteralData) {
-			checkForSignatureAndCompression(pgpObj, pgpFactory, outputFilePath);
+			Info i = checkForSignatureAndCompression(pgpObj, pgpFactory, outputFilePath);
 			bIn.close();
-			return;
+			return i;
 		}
 
+		boolean encBool = false;
 		PGPEncryptedDataList enc;
 		if (pgpObj instanceof PGPEncryptedDataList) {
 			enc = (PGPEncryptedDataList) pgpObj;
+			encBool = true;
 		} else {
 			enc = (PGPEncryptedDataList) pgpFactory.nextObject();
 		}
@@ -71,8 +101,13 @@ public class Decryptor {
 		while (privKey == null && it.hasNext()) {
 			try {
 				pubKeyED = (PGPPublicKeyEncryptedData) it.next();
-
-				PGPSecretKey secretKey = KeyChain.getKeyRing(pubKeyED.getKeyID()).getSecretKey();
+				PGPSecretKey secretKey = null;
+				try {
+					secretKey = KeyChain.getKeyRing(pubKeyED.getKeyID()).getSecretKey();
+				} catch (NullPointerException e) {
+					e.printStackTrace();
+					continue;
+				}
 
 				for (int i = 3; i > 0; i--) {
 					EnterPasswordPanel panel = new EnterPasswordPanel(i);
@@ -87,7 +122,7 @@ public class Decryptor {
 			} catch (PGPException e) {
 				e.printStackTrace();
 				bIn.close();
-				return;
+				return null;
 			}
 		}
 
@@ -101,7 +136,8 @@ public class Decryptor {
 		PGPObjectFactory plainFact = new PGPObjectFactory(clear, new JcaKeyFingerprintCalculator());
 		Object message = plainFact.nextObject();
 
-		checkForSignatureAndCompression(message, plainFact, outputFilePath);
+		Info i = checkForSignatureAndCompression(message, plainFact, outputFilePath);
+		i.setEncrypted(encBool);
 
 		if (pubKeyED.isIntegrityProtected() && !pubKeyED.verify()) {
 			bIn.close();
@@ -109,7 +145,7 @@ public class Decryptor {
 		}
 
 		bIn.close();
-
+		return i;
 	}
 
 	private static byte[] loadDataFromHexFile(String fileName) throws IOException {
@@ -152,8 +188,12 @@ public class Decryptor {
 		return null;
 	}
 
-	private static void checkForSignatureAndCompression(Object pgpObj, PGPObjectFactory pgpFactory,
+	private static Info checkForSignatureAndCompression(Object pgpObj, PGPObjectFactory pgpFactory,
 			String outputFilePath) throws PGPException, IOException {
+
+		boolean enc = false;
+		boolean sign = false;
+		long id = 0;
 
 		String fileName = "";
 
@@ -174,8 +214,18 @@ public class Decryptor {
 				Streams.pipeAll(((PGPLiteralData) pgpObj).getInputStream(), actualOutput);
 			} else if (pgpObj instanceof PGPOnePassSignatureList) {
 				onePassSignatureList = (PGPOnePassSignatureList) pgpObj;
+				for (PGPOnePassSignature e : onePassSignatureList) {
+					id = e.getKeyID();
+					break;
+				}
+				sign = true;
 			} else if (pgpObj instanceof PGPSignatureList) {
 				signatureList = (PGPSignatureList) pgpObj;
+				for (PGPSignature e : signatureList) {
+					id = e.getKeyID();
+					break;
+				}
+				sign = true;
 			} else {
 				throw new RuntimeException("Unknown message type!");
 			}
@@ -214,23 +264,28 @@ public class Decryptor {
 			}
 		}
 
+		if (fileName.equals("")) {
+			fileName = "file";
+		}
+
 		OutputStream fOut = new BufferedOutputStream(new FileOutputStream(outputFilePath + fileName));
 		fOut.write(output);
 		fOut.flush();
 		fOut.close();
+		return new Info(enc, sign, id);
 
 	}
 
-	public static void main_(String[] args) throws Exception {
+	public static void main(String[] args) throws Exception {
 		java.security.Security.setProperty("crypto.policy", "unlimited");
 		KeyManager.init();
 		{
 			KeyManager.loadKeyChain();
 
 			String outputFilePath = "data/";
-			String inputFilePath = "all_text.txt.gpg";
+			String inputFilePath = "text.txt.gpg";
 
-			Decryptor.dectyprFile(inputFilePath, outputFilePath);
+			Info i = Decryptor.dectyprFile(inputFilePath, outputFilePath);
 
 			KeyManager.storeKeyChain();
 		}
