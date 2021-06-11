@@ -330,7 +330,7 @@ public class MainMenuWindow {
 		SendMessageMenuItem.setFont(new Font("Segoe UI", Font.BOLD, 18));
 		mnNewMenu.add(SendMessageMenuItem);
 
-		JMenuItem ReciveMessageMenuItem = new JMenuItem("Recive Message");
+		JMenuItem ReciveMessageMenuItem = new JMenuItem("Receive Message");
 		ReciveMessageMenuItem.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				ReceiveMessageDialog dialog = new ReceiveMessageDialog();
