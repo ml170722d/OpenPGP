@@ -23,6 +23,7 @@ import java.awt.event.ActionEvent;
 import java.awt.Color;
 import javax.swing.border.LineBorder;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.UIManager;
 
 public class ReceiveMessageDialog extends JDialog {
 
@@ -135,8 +136,8 @@ public class ReceiveMessageDialog extends JDialog {
 				btnSaveResult.setEnabled(true);
 			}
 		});
-		btnDecrpyt.setBackground(Color.MAGENTA);
-		btnDecrpyt.setForeground(Color.CYAN);
+		btnDecrpyt.setBackground(Color.GRAY);
+		btnDecrpyt.setForeground(Color.BLACK);
 		btnDecrpyt.setFont(new Font("Tahoma", Font.BOLD, 16));
 		btnDecrpyt.setBounds(71, 114, 135, 50);
 		contentPanel.add(btnDecrpyt);
@@ -165,8 +166,8 @@ public class ReceiveMessageDialog extends JDialog {
 		
 		
 		contentPanel.add(selectedFileLabel);
-		btnSaveResult.setBackground(Color.RED);
-		btnSaveResult.setForeground(Color.CYAN);
+		btnSaveResult.setBackground(Color.GRAY);
+		btnSaveResult.setForeground(Color.BLACK);
 		btnSaveResult.setFont(new Font("Tahoma", Font.BOLD, 16));
 		btnSaveResult.setBounds(355, 114, 135, 50);
 		contentPanel.add(btnSaveResult);

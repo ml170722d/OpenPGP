@@ -141,8 +141,8 @@ public class SendMessageDialog extends JDialog {
 			public void valueChanged(ListSelectionEvent e) {
 				if (!e.getValueIsAdjusting()) {
 					String selected_sign_key = sign_list.getSelectedValue();
-					System.out.println("Private key " + signKey);
 					signKey = KeyChain.getKeyRing(mapUserID_KeyID.get(selected_sign_key));
+					System.out.println("Private key " + signKey);
 				}
 			}
 		});
