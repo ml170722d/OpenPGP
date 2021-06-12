@@ -12,6 +12,7 @@ import javax.swing.border.EmptyBorder;
 import etf.openpgp.za170657d_ml170722d.securityV2.Decryptor;
 import etf.openpgp.za170657d_ml170722d.securityV2.Decryptor.Info;
 import etf.openpgp.za170657d_ml170722d.securityV2.KeyChain;
+import etf.openpgp.za170657d_ml170722d.securityV2.KeyManager;
 
 import java.awt.Toolkit;
 import javax.swing.JLabel;
@@ -21,6 +22,7 @@ import java.io.File;
 import java.awt.event.ActionEvent;
 import java.awt.Color;
 import javax.swing.border.LineBorder;
+import javax.swing.table.DefaultTableModel;
 
 public class ReceiveMessageDialog extends JDialog {
 
@@ -64,7 +66,22 @@ public class ReceiveMessageDialog extends JDialog {
 		btnSaveResult.setEnabled(false);
 		btnSaveResult.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				
+				final JFileChooser fileChooser = new JFileChooser(new File("").getAbsoluteFile());
+				fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+				int result = fileChooser.showOpenDialog(contentPanel);
+				if (result == JFileChooser.APPROVE_OPTION) {
+					
+					System.out.println(fileChooser.getSelectedFile().getAbsolutePath());
+	
+					try {
+						Decryptor.dectyprFile(selectedFile.getAbsolutePath(),fileChooser.getSelectedFile().getAbsolutePath()+ '\\');
+					} catch (Exception e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+					
+				}
+					
 			}
 		});
 		
@@ -115,7 +132,7 @@ public class ReceiveMessageDialog extends JDialog {
 				//lblUserStatus.setText("User status : " + KeyChain.getKeyRing(info_item.getId()).getUserId());
 				String arrSplit[] = KeyChain.getKeyRing(info_item.getId()).getUserId().split("<");
 				lblUserStatus.setText("User status : " + arrSplit[0].toString() + " - " + arrSplit[1].substring(0, arrSplit[1].length() - 1));
-				btnSaveResult.setEnabled(true);;
+				btnSaveResult.setEnabled(true);
 			}
 		});
 		btnDecrpyt.setBackground(Color.MAGENTA);
@@ -160,6 +177,11 @@ public class ReceiveMessageDialog extends JDialog {
 			getContentPane().add(buttonPane);
 			{
 				JButton okButton = new JButton("OK");
+				okButton.addActionListener(new ActionListener() {
+					public void actionPerformed(ActionEvent e) {
+						dispose();
+					}
+				});
 				okButton.setFont(new Font("Tahoma", Font.PLAIN, 15));
 				okButton.setActionCommand("OK");
 				buttonPane.add(okButton);
