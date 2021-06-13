@@ -1,39 +1,42 @@
 package etf.openpgp.za170657d_ml170722d.GUI;
 
 import java.awt.BorderLayout;
+
+import etf.openpgp.za170657d_ml170722d.security.error.AlreadyInUse;
+import etf.openpgp.za170657d_ml170722d.securityV2.KeyManager;
+
 import java.awt.Color;
 import java.awt.FlowLayout;
 
 import javax.swing.JButton;
 import javax.swing.JDialog;
-import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.border.EmptyBorder;
 
 import org.bouncycastle.openpgp.PGPException;
-
-import etf.openpgp.za170657d_ml170722d.security.KeyManager;
-import etf.openpgp.za170657d_ml170722d.security.RSAUtil;
-
 import java.awt.Font;
 import java.awt.Toolkit;
 import javax.swing.JLabel;
 import javax.swing.JTextField;
 import java.awt.event.ActionListener;
-import java.security.GeneralSecurityException;
+import java.security.NoSuchAlgorithmException;
 import java.awt.event.ActionEvent;
 import javax.swing.SwingConstants;
 
 public class PassPhraseDialog extends JDialog {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	private final JPanel contentPanel = new JPanel();
 	private JTextField PasswordTextField;
 	private JTextField RepeatTextField;
 	private MainMenuWindow mainWindow;
 
 	private String passphrase_password;
-	private String email;
+	private String userID;
 	private int keySize;
 
 	public String getPassphrase_password() {
@@ -47,9 +50,9 @@ public class PassPhraseDialog extends JDialog {
 	/**
 	 * Create the dialog.
 	 */
-	public PassPhraseDialog(MainMenuWindow mainWindow, String email, int keySize) {
+	public PassPhraseDialog(MainMenuWindow mainWindow, String userID, int keySize) {
 
-		this.email = email;
+		this.userID = userID;
 		this.keySize = keySize;
 		this.mainWindow = mainWindow;
 
@@ -124,37 +127,26 @@ public class PassPhraseDialog extends JDialog {
 						passphrase_password = temp_password;
 						// From this part of code you have passphrase password,email and keysize!!!
 
+						/*
+						 * try { KeyManager km = KeyManager.getInstance(); switch (keySize) { case 1024:
+						 * km.generateRSAKeyPairEncryption(passphrase_password.toCharArray(), email,
+						 * RSAUtil.KeySize._1024b, RSAUtil.KeySize._1024b); break; case 2048:
+						 * km.generateRSAKeyPairEncryption(passphrase_password.toCharArray(), email,
+						 * RSAUtil.KeySize._2048b, RSAUtil.KeySize._2048b); break; case 4096:
+						 * km.generateRSAKeyPairEncryption(passphrase_password.toCharArray(), email,
+						 * RSAUtil.KeySize._4096b, RSAUtil.KeySize._4096b); break;
+						 * 
+						 * default: break; }
+						 */
+
 						try {
-							KeyManager km = KeyManager.getInstance();
-							switch (keySize) {
-							case 1024:
-								km.generateRSAKeyPairEncryption(passphrase_password.toCharArray(), email,
-										RSAUtil.KeySize._1024b, RSAUtil.KeySize._1024b);
-								break;
-							case 2048:
-								km.generateRSAKeyPairEncryption(passphrase_password.toCharArray(), email,
-										RSAUtil.KeySize._2048b, RSAUtil.KeySize._2048b);
-								break;
-							case 4096:
-								km.generateRSAKeyPairEncryption(passphrase_password.toCharArray(), email,
-										RSAUtil.KeySize._4096b, RSAUtil.KeySize._4096b);
-								break;
-
-							default:
-								break;
-							}
-
-							System.out.println(km.getUIUserInfo());
-
-						} catch (PGPException err) {
-							err.printStackTrace();
-						} catch (GeneralSecurityException err) {
-							err.printStackTrace();
-						} catch (Exception err) {
-							err.printStackTrace();
+							KeyManager.generateRSAKeyPair(passphrase_password.toCharArray(), userID, keySize);
+						} catch (NoSuchAlgorithmException | PGPException | AlreadyInUse e1) {
+							// TODO Auto-generated catch block
+							e1.printStackTrace();
 						}
+
 						mainWindow.addKeyPair();
-						mainWindow.userInfoList = KeyManager.getInstance().getUIUserInfo();
 						dispose();
 					}
 				});

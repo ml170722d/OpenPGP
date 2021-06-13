@@ -8,15 +8,18 @@ import javax.swing.JDialog;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
-import etf.openpgp.za170657d_ml170722d.security.KeyManager;
-import etf.openpgp.za170657d_ml170722d.security.KeyManager.KeyType;
+import etf.openpgp.za170657d_ml170722d.security.error.InvalidType;
+import etf.openpgp.za170657d_ml170722d.securityV2.KeyManager;
+import etf.openpgp.za170657d_ml170722d.securityV2.KeyRing.KeyRingTags;
 
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
+import java.io.IOException;
 
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+
 import java.awt.Font;
 
 import javax.swing.AbstractButton;
@@ -25,16 +28,21 @@ import javax.swing.JRadioButton;
 
 public class ExportDialog extends JDialog {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
 	private final JPanel contentPanel = new JPanel();
 
 	private String selectedKeyType;
-	
 
 	/**
 	 * Create the dialog.
 	 */
 	public ExportDialog(long keyId, int keyIndex) {
-		setIconImage(Toolkit.getDefaultToolkit().getImage(ExportDialog.class.getResource("/javax/swing/plaf/metal/icons/ocean/info.png")));
+		setIconImage(Toolkit.getDefaultToolkit()
+				.getImage(ExportDialog.class.getResource("/javax/swing/plaf/metal/icons/ocean/info.png")));
 		setTitle("Export Key");
 		setResizable(false);
 		setModal(true);
@@ -56,36 +64,42 @@ public class ExportDialog extends JDialog {
 			contentPanel.add(lblKeyID);
 			lblKeyID.setText(Long.toString(keyId));
 		}
-		
+
 		JRadioButton PublicKeyButton = new JRadioButton("Public Key");
 		PublicKeyButton.setFont(new Font("Tahoma", Font.PLAIN, 15));
 		PublicKeyButton.setBounds(298, 128, 127, 25);
 		contentPanel.add(PublicKeyButton);
-		
+
 		JRadioButton PrivateKeyButton = new JRadioButton("Private Key");
 		PrivateKeyButton.setFont(new Font("Tahoma", Font.PLAIN, 15));
 		PrivateKeyButton.setBounds(156, 128, 127, 25);
 		contentPanel.add(PrivateKeyButton);
-		
+
 		ButtonGroup buttonGroup = new ButtonGroup();
 		buttonGroup.add(PrivateKeyButton);
 		buttonGroup.add(PublicKeyButton);
-		
+
 		ActionListener buttonGroupListener = new ActionListener() {
-			
+
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				// TODO Auto-generated method stub
 				AbstractButton button = (AbstractButton) e.getSource();
 				System.out.println("Selected " + button.getText());
 				selectedKeyType = button.getText();
-				
+
 			}
 		};
-		
+
+		/*
+		 * if(KeyChain.getKeyRing(keyId).hasPrivateKey())
+		 * PublicKeyButton.setSelected(true); else if
+		 * (KeyChain.getKeyRing(keyId).hasPrivateKey())
+		 */
+
 		PublicKeyButton.addActionListener(buttonGroupListener);
 		PrivateKeyButton.addActionListener(buttonGroupListener);
-		
+
 		JLabel lblChooseKey = new JLabel("Choose key :");
 		lblChooseKey.setFont(new Font("Tahoma", Font.PLAIN, 17));
 		lblChooseKey.setBounds(22, 117, 127, 44);
@@ -98,15 +112,30 @@ public class ExportDialog extends JDialog {
 				JButton okButton = new JButton("OK");
 				okButton.addActionListener(new ActionListener() {
 					public void actionPerformed(ActionEvent e) {
-						if(selectedKeyType.contains("Public")) {
-							File exportFile = new File(Long.toString(keyId)+"_PUBLIC.asc");
-							KeyManager.getInstance().exportKey(keyIndex,exportFile, KeyType.PUBLIC);
+						if (selectedKeyType.contains("Public")) {
+							try {
+								KeyManager.exportKey(keyId, KeyRingTags.PUBLIC, Long.toString(keyId) + "_PUBLIC");
+							} catch (Exception e1) {
+								// TODO Auto-generated catch block
+								e1.printStackTrace();
+							}
+						} else {
+							try {
+								KeyManager.exportKey(keyId, KeyRingTags.PRIVATE, Long.toString(keyId) + "_PRIVATE");
+							} catch (NullPointerException e1) {
+								// TODO Auto-generated catch block
+							} catch (InvalidType e1) {
+								// TODO Auto-generated catch block
+								e1.printStackTrace();
+							} catch (IOException e1) {
+								// TODO Auto-generated catch block
+								e1.printStackTrace();
+							} catch (Exception e1) {
+								// TODO Auto-generated catch block
+								e1.printStackTrace();
+							}
 						}
-						else {
-							File exportFile = new File(Long.toString(keyId)+"_PRIVATE.asc");
-							KeyManager.getInstance().exportKey(keyIndex,exportFile, KeyType.PRIVATE);
-						}
-						
+
 						dispose();
 					}
 				});

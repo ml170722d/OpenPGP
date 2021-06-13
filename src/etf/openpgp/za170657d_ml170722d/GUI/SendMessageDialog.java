@@ -1,6 +1,5 @@
 package etf.openpgp.za170657d_ml170722d.GUI;
 
-import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 
 import javax.swing.DefaultListModel;
@@ -8,39 +7,37 @@ import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JPanel;
-import javax.swing.JPasswordField;
 import javax.swing.border.EmptyBorder;
 import javax.swing.filechooser.FileSystemView;
 
-import org.bouncycastle.openpgp.PGPException;
-
-import etf.openpgp.za170657d_ml170722d.security.Encryptor;
-import etf.openpgp.za170657d_ml170722d.security.Encryptor.EncryptionAlg;
-import etf.openpgp.za170657d_ml170722d.security.KeyManager;
+import org.bouncycastle.openpgp.PGPPublicKey;
 
 import java.awt.Toolkit;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 
 import javax.swing.JLabel;
 import java.awt.Font;
 import javax.swing.JCheckBox;
-import javax.swing.JTable;
 import javax.swing.JScrollPane;
 import javax.swing.JList;
 import javax.swing.ListSelectionModel;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.io.IOException;
 import java.awt.event.ActionEvent;
-import javax.swing.AbstractListModel;
 import javax.swing.JComboBox;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.ListSelectionEvent;
-import javax.swing.JTextField;
+import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
+
+import etf.openpgp.za170657d_ml170722d.securityV2.*;
 
 public class SendMessageDialog extends JDialog {
+
+	private static final long serialVersionUID = 1L;
 
 	private final JPanel contentPanel = new JPanel();
 
@@ -51,34 +48,30 @@ public class SendMessageDialog extends JDialog {
 	private boolean radix;
 
 	private String selectedAlg;
-	private String signKey;
-	ArrayList<String> selected_keys_list;
-	private JTextField passField;
+	private KeyRing signKey;
+	private File selectedFile;
 
-	/**
-	 * Launch the application.
-	 */
+	ArrayList<PGPPublicKey> selectedKeyList = new ArrayList<PGPPublicKey>();
+	private HashMap<String, Long> mapUserID_KeyID = new HashMap<String, Long>();
 
 	private void InitializeList(DefaultListModel<String> model) {
 
-		ArrayList<UserInfo> userInfoList = (ArrayList<UserInfo>) KeyManager.getInstance().getUIUserInfo();
+		List<KeyRing> keyPairList = KeyChain.getChain();
+		Iterator<KeyRing> it = keyPairList.iterator();
 
-		Iterator<UserInfo> it = userInfoList.iterator();
-
-		System.out.println("User info list " + userInfoList.size());
+		System.out.println("User info list " + keyPairList.size());
 
 		while (it.hasNext()) {
-			System.out.println("Adding");
-			UserInfo item = (UserInfo) it.next();
-			model.addElement(item.getEmail());
+			KeyRing item = it.next();
+			String arrSplit[] = item.getUserId().split("<");
+			model.addElement(arrSplit[0].toString() + "-" + arrSplit[1].substring(0, arrSplit[1].length() - 1));
+			mapUserID_KeyID.put(arrSplit[0].toString() + "-" + arrSplit[1].substring(0, arrSplit[1].length() - 1),
+					item.getKeyId());
 		}
 
 	}
 
-	/**
-	 * Create the dialog.
-	 */
-	public SendMessageDialog(int index) {
+	public SendMessageDialog(int index, long keyID) {
 		setIconImage(Toolkit.getDefaultToolkit()
 				.getImage(SendMessageDialog.class.getResource("/com/sun/java/swing/plaf/windows/icons/Computer.gif")));
 		setTitle("Send Message");
@@ -96,19 +89,19 @@ public class SendMessageDialog extends JDialog {
 			contentPanel.add(lblNewLabel);
 		}
 
-		JCheckBox chckbxEncryption = new JCheckBox("Public Key Encryption");
+		JCheckBox chckbxEncryption = new JCheckBox("Encryption");
 		chckbxEncryption.setFont(new Font("Tahoma", Font.PLAIN, 16));
-		chckbxEncryption.setBounds(29, 113, 181, 25);
+		chckbxEncryption.setBounds(29, 113, 103, 25);
 		contentPanel.add(chckbxEncryption);
 
 		JCheckBox chckbxDigitalSign = new JCheckBox("Digital Certification");
 
 		chckbxDigitalSign.setFont(new Font("Tahoma", Font.PLAIN, 16));
-		chckbxDigitalSign.setBounds(29, 195, 202, 25);
+		chckbxDigitalSign.setBounds(29, 195, 163, 25);
 		contentPanel.add(chckbxDigitalSign);
 
 		JScrollPane scrollPane = new JScrollPane();
-		scrollPane.setBounds(535, 104, 225, 38);
+		scrollPane.setBounds(535, 107, 225, 38);
 		contentPanel.add(scrollPane);
 
 		DefaultListModel<String> model = new DefaultListModel<>();
@@ -120,13 +113,15 @@ public class SendMessageDialog extends JDialog {
 				if (!e.getValueIsAdjusting()) {
 
 					JList list = (JList) e.getSource();
-					selected_keys_list = (ArrayList<String>) list.getSelectedValuesList();
-					Iterator<String> it = selected_keys_list.iterator();
+
+					List<String> str_list = list.getSelectedValuesList();
+
+					selectedKeyList.clear();
+					Iterator<String> it = str_list.iterator();
 
 					while (it.hasNext()) {
-						System.out.println(it.next());
+						selectedKeyList.add(KeyChain.getKeyRing(mapUserID_KeyID.get(it.next())).getPublicKey());
 					}
-					System.out.println("------------");
 				}
 
 			}
@@ -135,7 +130,7 @@ public class SendMessageDialog extends JDialog {
 		scrollPane.setViewportView(enc_list);
 
 		JScrollPane scrollPane_1 = new JScrollPane();
-		scrollPane_1.setBounds(240, 187, 225, 40);
+		scrollPane_1.setBounds(300, 188, 225, 40);
 		contentPanel.add(scrollPane_1);
 
 		DefaultListModel<String> model2 = new DefaultListModel<String>();
@@ -145,9 +140,9 @@ public class SendMessageDialog extends JDialog {
 		sign_list.addListSelectionListener(new ListSelectionListener() {
 			public void valueChanged(ListSelectionEvent e) {
 				if (!e.getValueIsAdjusting()) {
-					signKey = sign_list.getSelectedValue();
+					String selected_sign_key = sign_list.getSelectedValue();
+					signKey = KeyChain.getKeyRing(mapUserID_KeyID.get(selected_sign_key));
 					System.out.println("Private key " + signKey);
-					passField.setEnabled(true);
 				}
 			}
 		});
@@ -177,14 +172,17 @@ public class SendMessageDialog extends JDialog {
 						FileSystemView.getFileSystemView().getHomeDirectory());
 				int result = fileChooser.showOpenDialog(contentPanel);
 				if (result == JFileChooser.APPROVE_OPTION) {
-					File selectedFile = fileChooser.getSelectedFile();
-
+					selectedFile = fileChooser.getSelectedFile();
 					lblFileName.setText(selectedFile.getName());
+
+					System.out.println("Abs file path " + selectedFile.getAbsolutePath() + " file  get name"
+							+ selectedFile.getName());
+
 				}
 			}
 		});
 		btnNewButton.setFont(new Font("Tahoma", Font.PLAIN, 16));
-		btnNewButton.setBounds(286, 294, 225, 45);
+		btnNewButton.setBounds(270, 285, 225, 45);
 		contentPanel.add(btnNewButton);
 
 		JComboBox comboBox = new JComboBox();
@@ -197,20 +195,25 @@ public class SendMessageDialog extends JDialog {
 			}
 		});
 		comboBox.setModel(new DefaultComboBoxModel(new String[] { "3DES + EDE", "CAST5" }));
-		comboBox.setBounds(385, 104, 95, 38);
+		comboBox.setSelectedIndex(0);
+		comboBox.setBounds(300, 105, 95, 38);
 		contentPanel.add(comboBox);
 
 		JCheckBox chckbxIntegrity = new JCheckBox("Integrity Check");
 		chckbxIntegrity.setEnabled(false);
 		chckbxIntegrity.setFont(new Font("Tahoma", Font.PLAIN, 16));
-		chckbxIntegrity.setBounds(224, 113, 141, 25);
+		chckbxIntegrity.setBounds(150, 113, 141, 25);
 		contentPanel.add(chckbxIntegrity);
 
-		passField = new JPasswordField();
-		passField.setEnabled(false);
-		passField.setBounds(535, 187, 225, 40);
-		contentPanel.add(passField);
-		passField.setColumns(10);
+		JLabel lblNewLabel_1 = new JLabel("SENDER  : ");
+		lblNewLabel_1.setFont(new Font("Tahoma", Font.BOLD, 15));
+		lblNewLabel_1.setBounds(205, 187, 86, 40);
+		contentPanel.add(lblNewLabel_1);
+
+		JLabel lblNewLabel_2 = new JLabel("RECIVER/S  : ");
+		lblNewLabel_2.setFont(new Font("Tahoma", Font.BOLD, 15));
+		lblNewLabel_2.setBounds(415, 113, 104, 25);
+		contentPanel.add(lblNewLabel_2);
 
 		{
 			JPanel buttonPane = new JPanel();
@@ -221,19 +224,29 @@ public class SendMessageDialog extends JDialog {
 				JButton okButton = new JButton("OK");
 				okButton.addActionListener(new ActionListener() {
 					public void actionPerformed(ActionEvent e) {
-						// OK BUTTON CLICKED
-						System.out.println();
-						// if(
-						try {
-							int arr[] = { 0 };
-							Encryptor.encryptData(arr, "a".toCharArray(), "alfa".getBytes(), EncryptionAlg._3DES, false,
-									false, true, true, "test.pgp");
-						} catch (PGPException | IOException e1) {
-							// TODO Auto-generated catch block
-							e1.printStackTrace();
-						}
 
+						if (selectedAlg.contains("3DES")) {
+							try {
+								Encryptor.enctyptFile(new File("").getAbsolutePath(), selectedFile.getAbsolutePath(),
+										selectedFile.getName(), selectedKeyList, signKey.getSecretKey(),
+										integrity_check, radix, encryption, SymmetricKeyAlgorithmTags.TRIPLE_DES, zip,
+										digital_sign);
+							} catch (Exception e1) {
+								e1.printStackTrace();
+							}
+						} else if (selectedAlg.contains("CAST5")) {
+							try {
+								Encryptor.enctyptFile(new File("").getAbsolutePath(), selectedFile.getAbsolutePath(),
+										selectedFile.getName(), selectedKeyList, signKey.getSecretKey(),
+										integrity_check, radix, encryption, SymmetricKeyAlgorithmTags.CAST5, zip,
+										digital_sign);
+							} catch (Exception e1) {
+								e1.printStackTrace();
+							}
+						}
+						dispose();
 					}
+
 				});
 				okButton.setActionCommand("OK");
 				buttonPane.add(okButton);

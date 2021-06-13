@@ -3,48 +3,34 @@ package etf.openpgp.za170657d_ml170722d.GUI;
 import java.awt.EventQueue;
 
 import javax.swing.JFrame;
-import javax.swing.JDesktopPane;
-import javax.swing.JPanel;
-import java.awt.BorderLayout;
 import javax.swing.JMenuBar;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
+
 import java.awt.Font;
 import java.awt.Color;
 import java.awt.Toolkit;
-import javax.swing.JDialog;
 import javax.swing.JFileChooser;
-import javax.swing.filechooser.FileSystemView;
 
-import org.bouncycastle.openpgp.PGPException;
+import etf.openpgp.za170657d_ml170722d.security.error.AlreadyInUse;
+import etf.openpgp.za170657d_ml170722d.securityV2.KeyChain;
+import etf.openpgp.za170657d_ml170722d.securityV2.KeyManager;
+import etf.openpgp.za170657d_ml170722d.securityV2.KeyRing;
 
-import etf.openpgp.za170657d_ml170722d.security.KeyManager;
-
-import javax.swing.JLabel;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import javax.swing.JScrollPane;
-import java.awt.GridLayout;
-import java.awt.RenderingHints.Key;
 
 import javax.swing.JTable;
-import javax.swing.border.LineBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableModel;
 import javax.swing.ListSelectionModel;
 
 public class MainMenuWindow {
@@ -53,7 +39,7 @@ public class MainMenuWindow {
 
 	private File importedKeyFile;
 	private JTable keyPairTable;
-	
+
 	private int selectedKeyIndex;
 	private long selectedKeyId;
 	public List<UserInfo> userInfoList;
@@ -65,7 +51,7 @@ public class MainMenuWindow {
 	/**
 	 * Launch the application.
 	 */
-	public static void main(String[] args) {
+	public static void main_(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
@@ -83,97 +69,134 @@ public class MainMenuWindow {
 	 */
 	public MainMenuWindow() {
 		initialize(this);
-		try {
-			KeyManager.getInstance().loadKeyRings();
-		} catch (PGPException e) {
-			e.printStackTrace();
-		}
-
+		java.security.Security.setProperty("crypto.policy", "unlimited");
+		KeyManager.init();
+		KeyManager.loadKeyChain();
 		initializeKeyPairTable();
-		userInfoList = KeyManager.getInstance().getUIUserInfo();
-//		remove key ring from key manager
-//		KeyManager.getInstance().deleteKey(ind, password);
-		
 	}
-	
 
 	/**
-	 * Reads from file where the key pairs are stored and adds them to the key pair table.
+	 * Reads from file where the key pairs are stored and adds them to the key pair
+	 * table.
 	 */
 	public void initializeKeyPairTable() {
 		System.out.println("Add new key pair");
-		ArrayList<UserInfo> list = (ArrayList<UserInfo>) KeyManager.getInstance().getUIUserInfo();
 
-		Iterator it = list.iterator();
-		
-		while(it.hasNext()) {	
-		 UserInfo item = (UserInfo) it.next();
-		 AddTableRow(item);
+		List<KeyRing> data_list = KeyChain.getChain();
+		Iterator<KeyRing> it = data_list.iterator();
+
+		System.out.println("Initialize " + data_list.size());
+
+		while (it.hasNext()) {
+			KeyRing item = it.next();
+			AddTableRow(item);
 		}
-		
+
 	}
 
 	/**
 	 * Adds single key pair (row) to the key pair table.
 	 */
 	public void addKeyPair() {
-		
-		ArrayList<UserInfo> list = (ArrayList<UserInfo>) KeyManager.getInstance().getUIUserInfo();
-		UserInfo item = (UserInfo) list.get(list.size()-1);
+
+		List<KeyRing> list = KeyChain.getChain();
+		KeyRing item = (KeyRing) list.get(list.size() - 1);
 		AddTableRow(item);
-		
+
 	}
-	
+
 	/**
 	 * Adds rows to the table.
+	 * 
 	 * @param userInfo - data for the new row
 	 */
-	private void AddTableRow(UserInfo userInfo) {
-		
-		 DefaultTableModel model = (DefaultTableModel) keyPairTable.getModel();
-		 String rowData[] = new String[3];
-		 rowData[0] = userInfo.getEmail();
-		 rowData[1] = Long.toString(userInfo.getKeyId());
-		 rowData[2] = userInfo.getValidDateFrom().toString();
-		 model.insertRow(model.getRowCount(), rowData);
-		
-	}
-	
-	private void UpdateTableAfterImport() {
-		
+	private void AddTableRow(KeyRing keyRing) {
+
 		DefaultTableModel model = (DefaultTableModel) keyPairTable.getModel();
-		String rowData[] = new String[3];
-		
-		UserInfo userInfo = userInfoList.get(userInfoList.size()-1);
-		rowData[0] = userInfo.getEmail();
-		rowData[1] = Long.toString(userInfo.getKeyId());
-		rowData[2] = userInfo.getValidDateFrom().toString();
-		 
+		String rowData[] = new String[5];
+		String arrSplit[] = keyRing.getUserId().split("<");
+		rowData[0] = arrSplit[0];
+		rowData[1] = arrSplit[1].substring(0, arrSplit[1].length() - 1);
+		rowData[2] = Long.toString(keyRing.getKeyId());
+		rowData[3] = keyRing.getCreationDate().toString();
+		rowData[4] = "";
+
+		if (keyRing.hasPrivateKey() && keyRing.hasPublicKey())
+			rowData[4] = "PU-PR";
+		else if (keyRing.hasPrivateKey() && !keyRing.hasPublicKey())
+			rowData[4] = "PR";
+		else if (!keyRing.hasPrivateKey() && keyRing.hasPublicKey())
+			rowData[4] = "PU";
+		else
+			rowData[4] = "";
+
 		model.insertRow(model.getRowCount(), rowData);
-		
+
 	}
-	
+
+	// treba da prodje kroz tabelu vidi jel ima tog kljuca i da mu dodeli onaj flag
+	// ako nema kljuca ubaci nov red
+
+	private void UpdateTableAfterImport() {
+
+		DefaultTableModel model = (DefaultTableModel) keyPairTable.getModel();
+		String rowData[] = new String[5];
+
+		KeyRing keyRing = KeyChain.getChain().get(KeyChain.getChain().size() - 1);
+
+		String arrSplit[] = keyRing.getUserId().split("<");
+		rowData[0] = arrSplit[0];
+		rowData[1] = arrSplit[1].substring(0, arrSplit[1].length() - 1);
+		rowData[2] = Long.toString(keyRing.getKeyId());
+		rowData[3] = keyRing.getCreationDate().toString();
+
+		rowData[4] = "";
+
+		if (keyRing.hasPrivateKey() && keyRing.hasPublicKey())
+			rowData[4] = "PU-PR";
+		else if (keyRing.hasPrivateKey() && !keyRing.hasPublicKey())
+			rowData[4] = "PR";
+		else if (!keyRing.hasPrivateKey() && keyRing.hasPublicKey())
+			rowData[4] = "PU";
+		else
+			rowData[4] = "";
+
+		model.insertRow(model.getRowCount(), rowData);
+
+	}
+
 	private void RemoveTableRow() {
-		
-		Iterator it = this.userInfoList.iterator();
+
+		Iterator<KeyRing> it = KeyChain.getChain().iterator();
 		System.out.println("Remove Table row!");
 		DefaultTableModel model = (DefaultTableModel) keyPairTable.getModel();
-		
+
 		int i = 0;
-		while(i < keyPairTable.getRowCount()) {
+		while (i < keyPairTable.getRowCount()) {
 			System.out.println("Deleting the row");
-			long temp_key_Id = Long.parseLong((String)model.getValueAt(i, 1));
-			if(temp_key_Id == selectedKeyId) {
-				model.removeRow(i);
-				
+			long temp_key_Id = Long.parseLong((String) model.getValueAt(i, 2));
+			if (temp_key_Id == selectedKeyId) {
+
+				KeyRing item = KeyChain.getKeyRing(selectedKeyId);
+
+				if (item == null) {
+					model.removeRow(i);
+					break;
+				}
+				if (item.hasPrivateKey() && !item.hasPublicKey()) {
+					model.setValueAt("PR", i, 4);
+				} else if (!item.hasPrivateKey() && item.hasPublicKey()) {
+					model.setValueAt("PU", i, 4);
+				}
+
 				break;
 			}
-	
+
 			i++;
 		}
-		
+
 	}
-	
+
 	/**
 	 * Initialize the contents of the frame.
 	 */
@@ -205,19 +228,17 @@ public class MainMenuWindow {
 				// Your code goes here ####
 			}
 		});
-		
-		//listener for window closing
-		frmOpenPgp.addWindowListener(new WindowAdapter()
-	     {
-	       
+
+		// listener for window closing
+		frmOpenPgp.addWindowListener(new WindowAdapter() {
+
 			@Override
-	         public void windowClosing(WindowEvent e)
-	         {
-	             System.out.println("Closed");
-	             KeyManager.getInstance().storeKeyRings();
-	             e.getWindow().dispose();//discordapp.com/channels/@me
-	         }
-	     });
+			public void windowClosing(WindowEvent e) {
+				System.out.println("Closed");
+				KeyManager.storeKeyChain();
+				e.getWindow().dispose();// discordapp.com/channels/@me
+			}
+		});
 
 		mntmAddNewKey.setFont(new Font("Segoe UI", Font.BOLD, 18));
 		mnManageKeyPairs.add(mntmAddNewKey);
@@ -229,14 +250,22 @@ public class MainMenuWindow {
 		mntmDeleteKeyPair.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				System.out.println("Delete key");
-				KeyPairRemovalDialog dialog = new KeyPairRemovalDialog(host,host.selectedKeyIndex);
+				for (int i = 0; i < KeyChain.getChain().size(); i++) {
+					System.out.println(i + " " + KeyChain.getKeyRing(i).getKeyId());
+				}
+				KeyPairRemovalDialog dialog = new KeyPairRemovalDialog(host, host.selectedKeyId);
 				dialog.setVisible(true);
-				if(dialog.isSuccess()) {
+				if (dialog.isSuccess()) {
 					dialog.setSuccess(false);
 					mntmDeleteKeyPair.setEnabled(false);
-					host.RemoveTableRow();	
+					try {
+						host.RemoveTableRow();
+					} catch (Exception e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
 				}
-				
+
 			}
 		});
 		mntmDeleteKeyPair.setFont(new Font("Segoe UI", Font.BOLD, 18));
@@ -248,36 +277,24 @@ public class MainMenuWindow {
 
 		JMenuItem ImportMenuItem = new JMenuItem("Import Key Pair");
 		// System file dialog for file choosing.
-		//Import
+		// Import
 		ImportMenuItem.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				final JFileChooser fileChooser = new JFileChooser(
-						FileSystemView.getFileSystemView().getHomeDirectory());
+				final JFileChooser fileChooser = new JFileChooser(new File("").getAbsoluteFile());
 				int result = fileChooser.showOpenDialog(frmOpenPgp);
 				if (result == JFileChooser.APPROVE_OPTION) {
 					File selectedFile = fileChooser.getSelectedFile();
 					System.out.println("Selected file + " + selectedFile.getAbsolutePath());
-					if(selectedFile.getAbsolutePath().contains("PUBLIC")) {
-						try {
-							KeyManager.getInstance().importPublicKeyRingFromFile(selectedFile.getAbsolutePath().toString());
-						} catch (PGPException | IOException e1) {
-							// TODO Auto-generated catch block
-							e1.printStackTrace();
-						}
+					try {
+						KeyManager.importKeyRingFromFile(selectedFile.getAbsolutePath());
+						DefaultTableModel model = (DefaultTableModel) keyPairTable.getModel();
+						model.setRowCount(0);
+						keyPairTable.revalidate();
+						initializeKeyPairTable();
+					} catch (AlreadyInUse e1) {
+						JOptionPane.showMessageDialog(frmOpenPgp, "Key already in the table!","Open PGP Info",1);
+						//e1.printStackTrace();
 					}
-					else if (selectedFile.getAbsolutePath().contains("PRIVATE")) {
-						
-						try {
-							KeyManager.getInstance().importSecretKeyRingFromFile(selectedFile.getCanonicalPath().toString());
-						} catch (IOException | PGPException e1) {
-							// TODO Auto-generated catch block
-							e1.printStackTrace();
-						}
-						
-					}
-					
-					userInfoList = KeyManager.getInstance().getUIUserInfo();
-					UpdateTableAfterImport();
 				}
 
 			}
@@ -288,16 +305,14 @@ public class MainMenuWindow {
 		JMenuItem ExportMenuItem = new JMenuItem("Export Key Pair");
 		ExportMenuItem.setEnabled(false);
 		// System file dialog for file saving.
-		//Export
+		// Export
 		ExportMenuItem.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				ExportDialog dialog = new ExportDialog(selectedKeyId, selectedKeyIndex);
 				dialog.setVisible(true);
 			}
 		});
-		
-		
-		
+
 		ExportMenuItem.setFont(new Font("Segoe UI", Font.BOLD, 18));
 		ExportImportMenu.add(ExportMenuItem);
 
@@ -305,75 +320,86 @@ public class MainMenuWindow {
 		mnNewMenu.setFont(new Font("Segoe UI", Font.BOLD, 20));
 		menuBar.add(mnNewMenu);
 
-		//SEND MESSAGE
+		// SEND MESSAGE
 		JMenuItem SendMessageMenuItem = new JMenuItem("Send Message");
-		SendMessageMenuItem.setEnabled(false);
 		SendMessageMenuItem.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				new SendMessageDialog(selectedKeyIndex).setVisible(true);
+				new SendMessageDialog(selectedKeyIndex, selectedKeyId).setVisible(true);
 			}
 		});
 		SendMessageMenuItem.setFont(new Font("Segoe UI", Font.BOLD, 18));
 		mnNewMenu.add(SendMessageMenuItem);
 
-		JMenuItem ReciveMessageMenuItem = new JMenuItem("Recive Message");
-		ReciveMessageMenuItem.setEnabled(false);
+		JMenuItem ReciveMessageMenuItem = new JMenuItem("Receive Message");
+		ReciveMessageMenuItem.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				ReceiveMessageDialog dialog = new ReceiveMessageDialog();
+				dialog.setVisible(true);
+			}
+		});
 		ReciveMessageMenuItem.setFont(new Font("Segoe UI", Font.BOLD, 18));
 		mnNewMenu.add(ReciveMessageMenuItem);
 		frmOpenPgp.getContentPane().setLayout(null);
-		
+
 		JScrollPane scrollPane = new JScrollPane();
 		scrollPane.setBounds(120, 52, 872, 340);
 		frmOpenPgp.getContentPane().add(scrollPane);
-		
-		
-		
+
 		DefaultTableModel tabelModel = new DefaultTableModel();
-		
 		keyPairTable = new JTable(tabelModel);
+		tabelModel.addColumn("User Name");
 		tabelModel.addColumn("E-Mail");
 		tabelModel.addColumn("Key-ID");
 		tabelModel.addColumn("Valid From");
+		tabelModel.addColumn("Keys Status");
 		keyPairTable.setFont(new Font("Arial Black", Font.PLAIN, 15));
 		keyPairTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		scrollPane.setViewportView(keyPairTable);
 		keyPairTable.setBorder(null);
 		keyPairTable.setBounds(0, 0, 1, 1);
-		
-		
 
-		
 		keyPairTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
-			
+
 			@Override
 			public void valueChanged(ListSelectionEvent e) {
 				// TODO Auto-generated method stub
-				if(!e.getValueIsAdjusting() && keyPairTable.getSelectedRow()!=-1) {
-					String keyID = (String) keyPairTable.getValueAt(keyPairTable.getSelectedRow(), 1);
+				if (!e.getValueIsAdjusting() && keyPairTable.getSelectedRow() != -1) {
+					String keyID = (String) keyPairTable.getValueAt(keyPairTable.getSelectedRow(), 2);
 					selectedKeyId = Long.parseLong(keyID);
+
 					mntmDeleteKeyPair.setEnabled(true);
 					ExportMenuItem.setEnabled(true);
-					SendMessageMenuItem.setEnabled(true);
-					ReciveMessageMenuItem.setEnabled(true);
-					
-					//Find index of selected key pair, by the key id;
+
 					System.out.println("Selected");
-					Iterator it = userInfoList.iterator();
-					int index = -1;
-					while(it.hasNext()) {
-						
-						System.out.println("Search");
-						UserInfo item = (UserInfo) it.next();
-						if(item.getKeyId() == Long.parseLong(keyID)) {
-							host.selectedKeyIndex = item.getIndex();
-							System.out.println("Key ID " + keyID + " Index " + host.selectedKeyIndex);
-							break;
+					System.out.println("Key ID " + keyID);
+
+					try {
+						KeyRing keyRing = KeyChain.getKeyRing(selectedKeyId);
+
+						List<KeyRing> data_list = KeyChain.getChain();
+						Iterator<KeyRing> it = data_list.iterator();
+
+						int count = 0;
+
+						while (it.hasNext()) {
+							KeyRing item = it.next();
+							if (item.getKeyId() == selectedKeyId) {
+								selectedKeyIndex = count;
+								break;
+							}
+							count++;
 						}
+
+					} catch (Exception e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
 					}
+
+					System.out.println("Key ID " + keyID + " Index " + selectedKeyIndex);
+
 				}
 			}
 		});
 
-	
 	}
 }

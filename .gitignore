@@ -1,6 +1,9 @@
 /bin/
 keys/*/*
 .classpath
+*.gpg
+*.txt
+data/*
 
 !keys/*/placeholder
 !data/placeholder

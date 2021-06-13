@@ -17,7 +17,7 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 
-import etf.openpgp.za170657d_ml170722d.security.RSAUtil.KeySize;
+
 
 public class RSAUtil {
 
@@ -42,7 +42,7 @@ public class RSAUtil {
 		return keyPair.generateKeyPair();
 	}
 
-	public static RSAKeyGenParameterSpec generateRSAParams(KeySize bitKeySize, Provider provider)
+	public static RSAKeyGenParameterSpec generateRSAParams(int bitKeySize, Provider provider)
 			throws GeneralSecurityException {
 		AlgorithmParameterGenerator paramGen = AlgorithmParameterGenerator.getInstance("RSA", provider);
 		AlgorithmParameters params = paramGen.generateParameters();
